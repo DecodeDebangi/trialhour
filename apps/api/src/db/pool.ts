@@ -9,7 +9,7 @@ export type PoolClient = pg.PoolClient;
 /** Anything that can run a query: the pool, or a client inside a transaction. */
 export type Queryable = Pick<pg.Pool | pg.PoolClient, 'query'>;
 
-export function createPool(databaseUrl: string): pg.Pool {
+export function createPool(databaseUrl: string, max = 20): pg.Pool {
   // Session time zone UTC: timestamptz values and now() are never rendered in a server-local zone.
-  return new pg.Pool({ connectionString: databaseUrl, options: '-c TimeZone=UTC', max: 10 });
+  return new pg.Pool({ connectionString: databaseUrl, options: '-c TimeZone=UTC', max });
 }

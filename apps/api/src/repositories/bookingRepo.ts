@@ -2,6 +2,7 @@ import { DateTime } from 'luxon';
 import type { UtcRange } from '@codeyoung/shared';
 import type { Queryable } from '../db/pool.js';
 import type { BookedSlot } from '../domain/types.js';
+import { MentorSlotTakenError, pgErrorCode } from './errors.js';
 
 export interface NewBooking {
   id: string;
@@ -20,9 +21,26 @@ export interface NewBooking {
   classLink: string;
 }
 
+/** A stored booking with its mentor, as shown on the confirmation page. */
+export interface BookingDetails {
+  id: string;
+  startUtc: DateTime;
+  endUtc: DateTime;
+  parentName: string;
+  parentEmail: string;
+  childName: string;
+  childGrade: number;
+  parentTimezone: string;
+  classLink: string;
+  mentor: { id: string; name: string; timezone: string };
+}
+
 export interface BookingRepository {
   /** Confirmed bookings starting in [start, end). */
   listBookedSlots(range: UtcRange): Promise<BookedSlot[]>;
+  /** Throws MentorSlotTakenError if the unique (mentor, start) backstop fires. */
+  insert(booking: NewBooking): Promise<void>;
+  findById(id: string): Promise<BookingDetails | null>;
 }
 
 const toUtc = (d: Date) => DateTime.fromJSDate(d, { zone: 'utc' });
@@ -42,6 +60,53 @@ export function createBookingRepository(db: Queryable): BookingRepository {
         startUtc: toUtc(r.start_utc),
         shiftDate: r.shift_date,
       }));
+    },
+
+    async insert(booking) {
+      try {
+        await insertBooking(db, booking);
+      } catch (error) {
+        if (pgErrorCode(error) === '23505') throw new MentorSlotTakenError();
+        throw error;
+      }
+    },
+
+    async findById(id) {
+      const { rows } = await db.query<{
+        id: string;
+        start_utc: Date;
+        end_utc: Date;
+        parent_name: string;
+        parent_email: string;
+        child_name: string;
+        child_grade: number;
+        parent_timezone: string;
+        class_link: string;
+        mentor_id: string;
+        mentor_name: string;
+        mentor_timezone: string;
+      }>(
+        `SELECT b.id, b.start_utc, b.end_utc, b.parent_name, b.parent_email, b.child_name,
+                b.child_grade, b.parent_timezone, b.class_link,
+                m.id AS mentor_id, m.name AS mentor_name, m.timezone AS mentor_timezone
+           FROM bookings b JOIN mentors m ON m.id = b.mentor_id
+          WHERE b.id = $1`,
+        [id],
+      );
+      const r = rows[0];
+      if (!r) return null;
+      return {
+        id: r.id,
+        startUtc: toUtc(r.start_utc),
+        endUtc: toUtc(r.end_utc),
+        parentName: r.parent_name,
+        parentEmail: r.parent_email,
+        childName: r.child_name,
+        childGrade: r.child_grade,
+        parentTimezone: r.parent_timezone,
+        classLink: r.class_link,
+        mentor: { id: r.mentor_id, name: r.mentor_name, timezone: r.mentor_timezone },
+      };
     },
   };
 }

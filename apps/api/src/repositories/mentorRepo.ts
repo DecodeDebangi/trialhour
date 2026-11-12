@@ -14,6 +14,11 @@ export interface MentorWithSchedule extends Mentor {
 
 export interface MentorRepository {
   listWithSchedules(): Promise<MentorWithSchedule[]>;
+  /**
+   * Row-locks the given mentors until the transaction ends. Always in id order, so two
+   * bookings with overlapping candidate sets can never deadlock. Must run inside a transaction.
+   */
+  lockForBooking(mentorIds: readonly string[]): Promise<void>;
 }
 
 interface Row {
@@ -61,6 +66,12 @@ export function createMentorRepository(db: Queryable): MentorRepository {
         }
       }
       return [...byId.values()];
+    },
+
+    async lockForBooking(mentorIds) {
+      await db.query('SELECT id FROM mentors WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE', [
+        [...mentorIds],
+      ]);
     },
   };
 }

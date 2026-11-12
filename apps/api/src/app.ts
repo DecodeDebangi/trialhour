@@ -1,11 +1,14 @@
 import express, { type Express } from 'express';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
+import { bookingsRouter } from './routes/bookings.js';
 import { healthRouter } from './routes/health.js';
 import { slotsRouter } from './routes/slots.js';
+import type { BookingService } from './services/bookingService.js';
 import type { SlotService } from './services/slotService.js';
 
 export interface AppDeps {
   slotService: SlotService;
+  bookingService: BookingService;
   checkDatabase: () => Promise<void>;
 }
 
@@ -17,6 +20,7 @@ export function createApp(deps: AppDeps): Express {
 
   app.use('/api/health', healthRouter(deps.checkDatabase));
   app.use('/api/slots', slotsRouter(deps.slotService));
+  app.use('/api/bookings', bookingsRouter(deps.bookingService));
 
   app.use(notFound);
   app.use(errorHandler);

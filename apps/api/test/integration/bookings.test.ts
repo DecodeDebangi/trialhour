@@ -1,0 +1,253 @@
+import { afterAll, describe, expect, it } from 'vitest';
+import request from 'supertest';
+import { DateTime } from 'luxon';
+import { bookingResponseSchema, slotUnavailableResponseSchema } from '@codeyoung/shared';
+import { createBookingRepository } from '../../src/repositories/bookingRepo.js';
+import { MentorSlotTakenError } from '../../src/repositories/errors.js';
+import { createTestPool } from '../helpers/testDb.js';
+import { bookDirect, bookingBody, mentorId, mentorName, seededApp } from '../helpers/testApp.js';
+
+const pool = createTestPool();
+afterAll(() => pool.end());
+
+// Sat 20 Mar 2027, 00:00Z. Seed bookings land on 21 Mar; our tests use the 27 Mar UK shift.
+const NOW = '2027-03-20T00:00:00Z';
+// UK-evening shift that starts Sat 27 Mar, 20:30 India time: 15:00Z … 19:00Z. M1–M3 cover it.
+const UK = (hh: number) => `2027-03-27T${String(hh).padStart(2, '0')}:00:00Z`;
+const UK_IDS = ['M1', 'M2', 'M3'].map(mentorId);
+
+describe('POST /api/bookings — happy path', () => {
+  it('books, assigns an eligible mentor and returns the confirmation', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const res = await request(app)
+      .post('/api/bookings')
+      .send(bookingBody(UK(15)));
+    expect(res.status).toBe(201);
+    const booking = bookingResponseSchema.parse(res.body);
+    expect(booking).toMatchObject({
+      startUtc: '2027-03-27T15:00:00Z',
+      endUtc: '2027-03-27T16:00:00Z',
+      parentTimezone: 'Europe/London',
+      parent: { name: 'Emma Clarke', email: 'emma@example.com' },
+      child: { name: 'Oliver', grade: 4 },
+      classLink: `https://class.example.com/trial/${booking.id}`,
+    });
+    expect(UK_IDS).toContain(booking.mentor.id);
+    expect(booking.mentor.timezone).toBe('Asia/Kolkata');
+
+    const stored = await pool.query('SELECT shift_date FROM bookings WHERE id = $1', [booking.id]);
+    expect(stored.rows[0].shift_date).toBe('2027-03-27');
+  });
+
+  it('GET /api/bookings/:id returns the same confirmation', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const created = await request(app)
+      .post('/api/bookings')
+      .send(bookingBody(UK(15)));
+    const fetched = await request(app).get(`/api/bookings/${created.body.id}`);
+    expect(fetched.status).toBe(200);
+    expect(fetched.body).toEqual(created.body);
+  });
+
+  it('GET unknown id → 404; malformed id → 422', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const missing = await request(app).get('/api/bookings/6f1c2b1e-0000-4000-8000-000000000999');
+    expect(missing.status).toBe(404);
+    expect(missing.body.error.code).toBe('NOT_FOUND');
+    expect((await request(app).get('/api/bookings/abc')).status).toBe(422);
+  });
+});
+
+describe('POST /api/bookings — capacity rules', () => {
+  it('C1: two bookings either side of India midnight fill one shift; next evening is a new shift', async () => {
+    const { app } = await seededApp(pool, NOW);
+    await bookDirect(pool, 'M1', UK(18)); // 23:30 India, 27 Mar
+    await bookDirect(pool, 'M1', UK(19)); // 00:30 India, 28 Mar — same shift
+    const shifts = await pool.query(
+      'SELECT DISTINCT shift_date FROM bookings WHERE mentor_id = $1 AND start_utc >= $2',
+      [mentorId('M1'), UK(15)],
+    );
+    expect(shifts.rows).toEqual([{ shift_date: '2027-03-27' }]);
+
+    const third = await request(app)
+      .post('/api/bookings')
+      .send(bookingBody(UK(17)));
+    expect(third.status).toBe(201);
+    expect(third.body.mentor.id).not.toBe(mentorId('M1'));
+
+    // Sun 28 Mar, 20:30 India time: M2 and M3 are taken, M1 has a fresh shift.
+    const nextEvening = '2027-03-28T15:00:00Z';
+    await bookDirect(pool, 'M2', nextEvening);
+    await bookDirect(pool, 'M3', nextEvening);
+    const res = await request(app).post('/api/bookings').send(bookingBody(nextEvening));
+    expect(res.status).toBe(201);
+    expect(res.body.mentor).toEqual({
+      id: mentorId('M1'),
+      name: mentorName('M1'),
+      timezone: 'Asia/Kolkata',
+    });
+  });
+
+  it('C3: preferred mentor busy at the slot → quietly assigned to another, no 409', async () => {
+    const { app } = await seededApp(pool, NOW);
+    // With nobody booked, capacity-preserving ties on scarcity and bookings → M1 by id.
+    const first = await request(app)
+      .post('/api/bookings')
+      .send(bookingBody(UK(15)));
+    expect(first.body.mentor.id).toBe(mentorId('M1'));
+    const second = await request(app)
+      .post('/api/bookings')
+      .send(bookingBody(UK(15), { parentEmail: 'other@example.com', childName: 'Amelia' }));
+    expect(second.status).toBe(201);
+    expect([mentorId('M2'), mentorId('M3')]).toContain(second.body.mentor.id);
+  });
+
+  it('C4: every covering mentor busy → 409 FULLY_BOOKED with alternatives (empty in P0)', async () => {
+    const { app } = await seededApp(pool, NOW);
+    for (const key of ['M1', 'M2', 'M3']) await bookDirect(pool, key, UK(16));
+    const res = await request(app)
+      .post('/api/bookings')
+      .send(bookingBody(UK(16)));
+    expect(res.status).toBe(409);
+    expect(slotUnavailableResponseSchema.parse(res.body)).toEqual({
+      error: {
+        code: 'SLOT_UNAVAILABLE',
+        message: 'Sorry, that time has just been taken.',
+        details: { reason: 'FULLY_BOOKED' },
+      },
+      alternatives: [],
+    });
+  });
+
+  it('C2: every covering mentor at the cap → 409 DAILY_LIMIT_REACHED', async () => {
+    const { app } = await seededApp(pool, NOW);
+    for (const key of ['M1', 'M2', 'M3']) {
+      await bookDirect(pool, key, UK(15));
+      await bookDirect(pool, key, UK(16));
+    }
+    const res = await request(app)
+      .post('/api/bookings')
+      .send(bookingBody(UK(17)));
+    expect(res.status).toBe(409);
+    expect(res.body.error.details).toEqual({ reason: 'DAILY_LIMIT_REACHED' });
+  });
+
+  it('C7: inside the 4h notice → 409 TOO_SOON', async () => {
+    const { app } = await seededApp(pool, NOW);
+    // 02:00Z = 07:30 India time, US-West shift, 2h from now.
+    const res = await request(app).post('/api/bookings').send(bookingBody('2027-03-20T02:00:00Z'));
+    expect(res.status).toBe(409);
+    expect(res.body.error.details).toEqual({ reason: 'TOO_SOON' });
+  });
+});
+
+describe('POST /api/bookings — validation (422 / 400)', () => {
+  it.each([
+    ['off the hour grid (C8)', bookingBody('2027-03-27T15:30:00Z'), 'startUtc'],
+    ['no mentor works then (C8)', bookingBody('2027-03-27T13:00:00Z'), 'startUtc'],
+    ['beyond 14 days (C7)', bookingBody('2027-04-10T15:00:00Z'), undefined],
+    ['start without offset', bookingBody('2027-03-27T15:00:00'), 'startUtc'],
+    ['abbreviated zone', bookingBody(UK(15), { parentTimezone: 'EST' }), 'parentTimezone'],
+    ['bad email', bookingBody(UK(15), { parentEmail: 'not-an-email' }), 'parentEmail'],
+    ['grade 13', bookingBody(UK(15), { childGrade: 13 }), 'childGrade'],
+    ['blank child name', bookingBody(UK(15), { childName: '   ' }), 'childName'],
+    ['bad phone', bookingBody(UK(15), { phone: '07700 900123' }), 'phone'],
+  ])('%s → 422', async (_label, body, path) => {
+    const { app } = await seededApp(pool, NOW);
+    const res = await request(app).post('/api/bookings').send(body);
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    if (path) {
+      expect(res.body.error.details).toEqual(
+        expect.arrayContaining([expect.objectContaining({ path })]),
+      );
+    }
+  });
+
+  it('malformed JSON → 400 INVALID_JSON', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const res = await request(app)
+      .post('/api/bookings')
+      .set('Content-Type', 'application/json')
+      .send('{"startUtc":');
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('INVALID_JSON');
+  });
+
+  it('nothing is written when a request is rejected', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const before = await pool.query('SELECT count(*)::int AS n FROM bookings');
+    await request(app).post('/api/bookings').send(bookingBody('2027-03-27T15:30:00Z'));
+    const after = await pool.query('SELECT count(*)::int AS n FROM bookings');
+    expect(after.rows[0].n).toBe(before.rows[0].n);
+  });
+});
+
+describe('backstop and timeouts', () => {
+  it('the repository turns a unique-index violation into MentorSlotTakenError', async () => {
+    await seededApp(pool, NOW);
+    await bookDirect(pool, 'M1', UK(15));
+    const start = DateTime.fromISO(UK(15), { zone: 'utc' });
+    await expect(
+      createBookingRepository(pool).insert({
+        id: crypto.randomUUID(),
+        mentorId: mentorId('M1'),
+        startUtc: start,
+        endUtc: start.plus({ hours: 1 }),
+        shiftDate: '2027-03-27',
+        parentName: 'P',
+        parentEmail: 'p@example.com',
+        parentEmailNorm: 'p@example.com',
+        childName: 'C',
+        childNameNorm: 'c',
+        childGrade: 3,
+        phone: null,
+        parentTimezone: 'Europe/London',
+        classLink: 'https://class.example.com/trial/x',
+      }),
+    ).rejects.toBeInstanceOf(MentorSlotTakenError);
+  });
+
+  it('a request stuck behind a held mentor lock gets 503 TRY_AGAIN after lock_timeout, not a hang', async () => {
+    const { app } = await seededApp(pool, NOW, {
+      transactionOptions: { lockTimeoutMs: 300, statementTimeoutMs: 5_000 },
+    });
+    const holder = await pool.connect();
+    try {
+      await holder.query('BEGIN');
+      await holder.query('SELECT id FROM mentors WHERE id = ANY($1::uuid[]) FOR UPDATE', [UK_IDS]);
+
+      const started = Date.now();
+      const res = await request(app)
+        .post('/api/bookings')
+        .send(bookingBody(UK(15)));
+      const elapsed = Date.now() - started;
+      expect(res.status).toBe(503);
+      expect(res.headers['retry-after']).toBe('1');
+      expect(res.body.error.code).toBe('TRY_AGAIN');
+      expect(elapsed).toBeGreaterThanOrEqual(300);
+      expect(elapsed).toBeLessThan(2_000);
+    } finally {
+      await holder.query('ROLLBACK');
+      holder.release();
+    }
+    // Once the lock is released, the same request succeeds.
+    const retry = await request(app)
+      .post('/api/bookings')
+      .send(bookingBody(UK(15)));
+    expect(retry.status).toBe(201);
+  });
+
+  it('timeouts are transaction-local and do not leak into pooled connections', async () => {
+    const { app } = await seededApp(pool, NOW, {
+      transactionOptions: { lockTimeoutMs: 300, statementTimeoutMs: 5_000 },
+    });
+    await request(app)
+      .post('/api/bookings')
+      .send(bookingBody(UK(15)));
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () => pool.query('SHOW lock_timeout')),
+    );
+    expect(results.map((r) => r.rows[0].lock_timeout)).toEqual(Array(5).fill('0'));
+  });
+});

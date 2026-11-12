@@ -12,8 +12,10 @@ export default defineConfig({
           name: 'integration',
           include: ['test/integration/**/*.test.ts'],
           globalSetup: ['test/helpers/globalSetup.ts'],
-          // Files share one database; run them one at a time.
-          fileParallelism: false,
+          // Files share one database, so they must run one at a time. A project-level
+          // `fileParallelism: false` is ignored when projects are used; one fork enforces it.
+          pool: 'forks',
+          poolOptions: { forks: { singleFork: true } },
           testTimeout: 20_000,
         },
       },

@@ -1,11 +1,17 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { ZodError } from 'zod';
-import { InvalidTimeZoneError, type ErrorResponse } from '@codeyoung/shared';
-import { DomainError } from '../domain/errors.js';
+import {
+  InvalidTimeZoneError,
+  type ErrorResponse,
+  type SlotUnavailableResponse,
+} from '@codeyoung/shared';
+import { DomainError, SlotUnavailableError } from '../domain/errors.js';
+import { TransientDatabaseError } from '../repositories/errors.js';
 
 /** HTTP status for each domain error code. Anything unlisted is a server error. */
 const STATUS_BY_CODE: Readonly<Record<string, number>> = {
   VALIDATION_ERROR: 422,
+  NOT_FOUND: 404,
 };
 
 function body(code: string, message: string, details?: unknown): ErrorResponse {
@@ -26,6 +32,21 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     res
       .status(422)
       .json(body('VALIDATION_ERROR', err.message, [{ path: 'tz', message: err.message }]));
+    return;
+  }
+  if (err instanceof SlotUnavailableError) {
+    const payload: SlotUnavailableResponse = {
+      ...body(err.code, err.message, { reason: err.reason }),
+      alternatives: [...err.alternatives],
+    };
+    res.status(409).json(payload);
+    return;
+  }
+  if (err instanceof TransientDatabaseError) {
+    res
+      .status(503)
+      .set('Retry-After', '1')
+      .json(body('TRY_AGAIN', 'We are busy right now. Please try again in a moment.'));
     return;
   }
   if (err instanceof DomainError) {

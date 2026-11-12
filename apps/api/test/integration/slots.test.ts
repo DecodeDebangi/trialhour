@@ -148,6 +148,7 @@ describe('GET /api/health and unknown routes', () => {
   it('reports 503 when the database does not', async () => {
     const app = createApp({
       slotService: undefined as never,
+      bookingService: undefined as never,
       checkDatabase: () => Promise.reject(new Error('down')),
     });
     const res = await request(app).get('/api/health');

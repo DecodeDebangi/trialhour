@@ -12,7 +12,10 @@
   "scripts": {
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm test --workspaces --if-present",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "dev": "npm run dev -w @codeyoung/api",
+    "db:setup": "npm run db:setup -w @codeyoung/api",
+    "db:seed": "npm run db:seed -w @codeyoung/api"
   },
   "devDependencies": {
     "prettier": "^3.10.1",

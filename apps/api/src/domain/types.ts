@@ -1,4 +1,7 @@
 import type { DateTime } from 'luxon';
+import type { UnavailableReason } from '@codeyoung/shared';
+
+export type { UnavailableReason };
 
 /** ISO weekday, 1 = Monday … 7 = Sunday, in the mentor's zone, of the shift *start*. */
 export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -41,6 +44,3 @@ export interface BookingPolicy {
   horizonDays: number;
   dailyCap: number;
 }
-
-/** Why a slot inside some mentor's window can't be booked. Precedence follows the list order. */
-export type UnavailableReason = 'TOO_SOON' | 'DAILY_LIMIT_REACHED' | 'FULLY_BOOKED';

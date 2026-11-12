@@ -1,44 +1,29 @@
-import type { AvailabilityWindow, MentorSchedule, Weekday } from '../../src/domain/types.js';
+import { SEED_MENTORS } from '../../src/db/seedData.js';
+import type { MentorSchedule } from '../../src/domain/types.js';
 
-// Mirrors the seed shifts in SPEC.md §4. All mentors in India time.
-const INDIA = 'Asia/Kolkata';
-const ALL_DAYS: Weekday[] = [1, 2, 3, 4, 5, 6, 7];
-
-function windows(
-  mentorId: string,
-  days: Weekday[],
-  startLocal: string,
-  durationMin: number,
-  tag = 'w',
-): AvailabilityWindow[] {
-  return days.map((weekday) => ({
-    id: `${mentorId}-${tag}${weekday}`,
-    weekday,
-    startLocal,
-    durationMin,
-  }));
+/**
+ * Seed schedules keyed by M-number (SPEC.md §4), so domain tests read like the spec.
+ * Built from the real seed data: if the seed changes, the domain tests see it.
+ */
+function schedule(key: string): MentorSchedule {
+  const m = SEED_MENTORS.find((s) => s.key === key);
+  if (!m) throw new Error(`No seed mentor ${key}`);
+  return {
+    mentorId: key,
+    timezone: m.timezone,
+    windows: m.windows.map((w) => ({ ...w, id: `${key}-w${w.weekday}` })),
+  };
 }
 
-function mentor(mentorId: string, ws: AvailabilityWindow[]): MentorSchedule {
-  return { mentorId, timezone: INDIA, windows: ws };
-}
-
-const ukEvening = (id: string) => mentor(id, windows(id, ALL_DAYS, '20:30', 300));
-const usEast = (id: string) => mentor(id, windows(id, ALL_DAYS, '01:30', 300));
-const usWest = (id: string) => mentor(id, windows(id, ALL_DAYS, '04:30', 300));
-
-export const M1 = ukEvening('M1');
-export const M2 = ukEvening('M2');
-export const M3 = ukEvening('M3');
-export const M4 = usEast('M4');
-export const M5 = usEast('M5');
-export const M6 = usEast('M6');
-export const M7 = usWest('M7');
-export const M8 = usWest('M8');
-export const M9 = mentor('M9', windows('M9', ALL_DAYS, '10:30', 240));
-export const M10 = mentor('M10', [
-  ...windows('M10', [1, 2, 3, 4, 5], '10:30', 240, 'au'),
-  ...windows('M10', [6, 7], '13:30', 240, 'ukwe'),
-]);
+export const M1 = schedule('M1');
+export const M2 = schedule('M2');
+export const M3 = schedule('M3');
+export const M4 = schedule('M4');
+export const M5 = schedule('M5');
+export const M6 = schedule('M6');
+export const M7 = schedule('M7');
+export const M8 = schedule('M8');
+export const M9 = schedule('M9');
+export const M10 = schedule('M10');
 
 export const SEED_SCHEDULES: readonly MentorSchedule[] = [M1, M2, M3, M4, M5, M6, M7, M8, M9, M10];

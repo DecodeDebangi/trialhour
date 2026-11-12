@@ -113,7 +113,7 @@ The strategy is chosen with `ASSIGNMENT_STRATEGY=capacity-preserving|fair-load`.
   `scarcity(m) = Σ 1 / k(s)` over *m*'s other open, bookable slots *s* in the same shift, where `k(s)` is the number of mentors eligible at *s*.
   Rank by scarcity ascending (compared with ε = 1e-9), then fewest bookings, then `mentor.id`.
 
-**Example.** M4, M5 and M6 each have 1 booking at 01:30 IST, M7 and M8 have none, and a parent books 04:30 IST (6 PM New York / 3 PM Los Angeles).
+**Example.** M4, M5 and M6 each have 1 booking at 01:30 IST, M7 and M8 have none, and a parent books 04:30 IST (6 PM New York / 3 PM Los Angeles in winter).
 `scarcity(M4) = 1/3 + 1/3 + 1/5 = 0.87` (slots 02:30, 03:30, 05:30). `scarcity(M7) = 1/5 + 3 × 1/2 = 1.70` (05:30, 06:30–08:30).
 Capacity-preserving picks **M4**. Fair-load would pick M7 and use up one of only four bookings available for the 06:30–08:30 IST slots, which only M7 and M8 cover.
 

@@ -173,10 +173,16 @@ export function BookingForm({
             </label>
             <input
               id={fieldId('childName')}
+              name="childFirstName"
               className={styles.input}
               value={values.childName}
               onChange={set('childName')}
               autoComplete="off"
+              // Keep password managers from treating the child's name as a username.
+              data-1p-ignore=""
+              data-lpignore="true"
+              data-form-type="other"
+              required
               aria-invalid={!!errors.childName}
               aria-describedby={describedBy('childName')}
             />
@@ -188,13 +194,18 @@ export function BookingForm({
             </label>
             <select
               id={fieldId('childGrade')}
-              className={styles.input}
+              name="childGrade"
+              className={`${styles.input} ${styles.select}`}
               value={values.childGrade}
               onChange={set('childGrade')}
+              autoComplete="off"
+              required
               aria-invalid={!!errors.childGrade}
               aria-describedby={describedBy('childGrade')}
             >
-              <option value="">{copy.childGradePlaceholder}</option>
+              <option value="" disabled>
+                {copy.childGradePlaceholder}
+              </option>
               {Array.from({ length: 12 }, (_, i) => i + 1).map((g) => (
                 <option key={g} value={g}>
                   {copy.grade(g)}
@@ -211,7 +222,9 @@ export function BookingForm({
           </label>
           <input
             id={fieldId('parentName')}
+            name="name"
             className={styles.input}
+            required
             value={values.parentName}
             onChange={set('parentName')}
             autoComplete="name"
@@ -230,7 +243,9 @@ export function BookingForm({
           </p>
           <input
             id={fieldId('parentEmail')}
+            name="email"
             className={styles.input}
+            required
             type="email"
             inputMode="email"
             value={values.parentEmail}
@@ -253,7 +268,9 @@ export function BookingForm({
             </label>
             <select
               id={`${fieldId('phone')}-dial`}
-              className={styles.input}
+              name="phoneCountryCode"
+              className={`${styles.input} ${styles.select}`}
+              autoComplete="tel-country-code"
               value={dial}
               onChange={(e) => setDial(e.target.value)}
             >
@@ -268,6 +285,7 @@ export function BookingForm({
             </label>
             <input
               id={fieldId('phone')}
+              name="phone"
               className={styles.input}
               type="tel"
               inputMode="tel"

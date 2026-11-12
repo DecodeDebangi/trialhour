@@ -52,7 +52,7 @@ export const copy = {
   formHeading: 'Your details',
   childName: "Child's first name",
   childGrade: "Child's grade",
-  childGradePlaceholder: 'Choose a grade',
+  childGradePlaceholder: 'Select grade',
   grade: (n: number) => `Grade ${n}`,
   parentName: 'Your name',
   parentEmail: 'Your email',

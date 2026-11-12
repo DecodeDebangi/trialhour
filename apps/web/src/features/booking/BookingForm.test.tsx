@@ -57,6 +57,27 @@ describe('BookingForm', () => {
     );
   });
 
+  it('grade starts on a "Select grade" placeholder and is required (no silent default)', () => {
+    renderForm();
+    const grade = screen.getByLabelText("Child's grade") as HTMLSelectElement;
+    expect(grade.value).toBe('');
+    expect(grade.selectedOptions[0]!.textContent).toBe('Select grade');
+    expect(grade.required).toBe(true);
+  });
+
+  it('sets autocomplete hints so browsers and password managers fill the right fields', () => {
+    renderForm();
+    const attr = (label: RegExp | string) =>
+      screen.getByLabelText(label).getAttribute('autocomplete');
+    expect(attr("Child's first name")).toBe('off');
+    expect(attr("Child's grade")).toBe('off');
+    expect(attr('Your name')).toBe('name');
+    expect(attr(/Your email/)).toBe('email');
+    expect(attr('Phone number')).toBe('tel-national');
+    expect(attr('Country code')).toBe('tel-country-code');
+    expect(screen.getByLabelText("Child's first name").getAttribute('data-1p-ignore')).toBe('');
+  });
+
   it('defaults the country code from the zone and sends "07700 900123" as E.164', async () => {
     const create = vi.spyOn(api, 'createBooking').mockResolvedValue(booking);
     const props = renderForm();

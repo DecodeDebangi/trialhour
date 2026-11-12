@@ -33,7 +33,7 @@
 
 .linkButton {
   min-height: var(--tap);
-  padding: 0 var(--space-2);
+  padding: 0;
   border: none;
   background: none;
   color: var(--primary-hover);
@@ -112,6 +112,18 @@
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
   background: var(--surface);
+}
+
+/* Native selects: hide the platform arrow, draw our own with room on the right. */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%231F2A44' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px 16px;
+  text-overflow: ellipsis;
 }
 
 .input[aria-invalid='true'] {

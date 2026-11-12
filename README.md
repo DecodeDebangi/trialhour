@@ -14,13 +14,15 @@ Built for the Codeyoung Senior Full Stack Engineer assignment. The agreed specif
   - `.ics` download.
 - **P2** (mentor page, Playwright happy path) is listed under [What I'd do next](#out-of-scope-and-what-id-do-next).
 
-| Booking (phone) | Unavailable slot reason | Slot just taken → alternatives |
+| Booking on a phone | A greyed-out time, tapped | Slot taken while filling the form → alternatives |
 |---|---|---|
-| _screenshot placeholder_ | _screenshot placeholder_ | _screenshot placeholder_ |
+| <img src="docs/screenshots/01-booking-phone.png" alt="Booking page on a phone: zone bar showing London time (GMT+0), a date strip with open counts per day, and the time grid" width="240"> | <img src="docs/screenshots/02-slot-reason-phone.png" alt="A booked time tapped: 'No mentor is free at 5:00 AM on Sat 14 Nov. Please pick another time.' with a 'Next open time' button" width="240"> | <img src="docs/screenshots/03-alternatives-phone.png" alt="409 panel: 'No mentor is free at Sun 15 Nov, 4:00 PM London time (GMT+0) anymore.' with five alternatives, one selected, and a confirm button" width="240"> |
 
-| Confirmation | Outbox: parent and mentor emails side by side |
+| Confirmation | Outbox: the same class in each reader's own time |
 |---|---|
-| _screenshot placeholder_ | _screenshot placeholder_ |
+| <img src="docs/screenshots/04-confirmation-phone.png" alt="Confirmation page: when, mentor name, class link with Copy, Add to calendar, and 'We've emailed the details'" width="240"> | <img src="docs/screenshots/05-outbox-desktop.png" alt="Outbox: parent email at Sun 15 Nov, 3:00 PM London time next to the mentor email at 8:30 PM India time with the parent's time underneath" width="520"> |
+
+<sub>Taken with headless Chrome against `docker compose up`: phone shots at 390×844, the outbox at 1280×900, browser time zone Europe/London.</sub>
 
 ---
 

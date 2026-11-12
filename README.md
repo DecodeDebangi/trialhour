@@ -103,14 +103,14 @@ docker compose up -d db   # integration tests need Postgres on :5433
 npm test                  # all workspaces
 ```
 
-**306 tests**, all passing:
+**324 tests**, all passing:
 
 | Workspace | Tests | What they cover |
 |---|---|---|
-| `packages/shared` | 64 | Time formatting, zone validation, local day bounds (23h and 25h days) |
-| `apps/api` unit | 112 | Pure domain logic: slots and shift dates (including a class that spans a DST change), availability and reasons, booking window, both assignment strategies, alternatives, emails, `.ics`, request fingerprints, the seed planner, config, clock, the booking service (backstop, replay, duplicates, outbox) |
+| `packages/shared` | 70 | Time formatting, zone validation, local day bounds (23h and 25h days), the daytime window (including DST and half-hour zones) |
+| `apps/api` unit | 114 | Pure domain logic: slots and shift dates (including a class that spans a DST change), availability and reasons, booking window, both assignment strategies, alternatives (daytime first), emails, `.ics`, request fingerprints, the seed planner, config, clock, the booking service (backstop, replay, duplicates, outbox) |
 | `apps/api` integration | 66 | Real Postgres: migrations, seed, slots/booking/outbox/calendar APIs, duplicate trials (including one in progress), idempotency, a booking spanning the US clock change, **concurrency (X1, X2, X3, X5)**, lock timeouts |
-| `apps/web` | 64 | Components and pages (date strip, slot grid, form with alternatives and duplicates, confirmation, outbox) plus pure helpers (phone, zones, days, UUIDs, clipboard). Includes booking and copying the class link on plain http, where `crypto.randomUUID` and `navigator.clipboard` don't exist. |
+| `apps/web` | 74 | Components and pages (date strip, slot grid with the night-times toggle, form with alternatives and duplicates, confirmation, outbox) plus pure helpers (phone, zones, days, UUIDs, clipboard). Includes booking and copying the class link on plain http, where `crypto.randomUUID` and `navigator.clipboard` don't exist. |
 
 - **Traceable to the spec:** test names carry the IDs from the test matrix in [SPEC.md §11](SPEC.md#11-test-matrix) (T1–T16 for DST and zones, C1–C11 for capacity, X1–X2 for concurrency).
 - **Integration database:** integration tests use a separate `booking_test` database. It's rebuilt from the migrations once per run, and the test files run one at a time.
@@ -202,6 +202,7 @@ MongoDB can do multi-document transactions, but it needs a replica set even loca
 | — | **No temporary slot holds (no Redis).** | At ~20 bookings/day, a parent losing a slot while filling in the form is rare. It's handled with a friendly 409 and a refreshed list rather than hold/expiry machinery. |
 | — | **No ORM; one Dockerfile; `vite preview` serves the web build.** | Fewer moving parts. The locking SQL is visible, and there's no nginx config to maintain. |
 | — | **A start time already in the past is "too soon" (409), not invalid (422).** | It almost always means the parent left the form open; alternatives help more than a validation error. |
+| — | **Night times are hidden by default, not removed.** | 7:00 AM–9:00 PM local covers after-school and weekend times for every market we serve, while a parent who really wants 6 AM can still see it. Mentor availability is unchanged; this is purely what's shown first. |
 | — | **Parent-facing reasons describe the time, not the rule.** | "No mentor is free at 4:00 PM on Sat 14 Nov" rather than "our mentors reached their daily limit", which wrongly suggests the whole day is full. The precise reason stays in the API for clients and logs. |
 | — | **Choosing an alternative takes two taps: select, then confirm.** | Parents can't cancel or reschedule, so a mis-tap (tomorrow instead of today) would leave them stuck. |
 | — | **A failed attempt doesn't use up its Idempotency-Key.** | The key's row rolls back with the failed transaction, so a retry after a 409 or a timeout runs fresh. Only a successful booking's response is replayed. Keys don't expire yet (see next steps). |
@@ -413,7 +414,7 @@ Header **`Idempotency-Key: <uuid>`** is required. `phone` is optional and must b
 }
 ```
 
-`alternatives` is always present (possibly empty). It holds up to 5 open slots: the same **parent-local** day first, closest in time (the earlier wins a tie), then the following days in order. Earlier days are never offered. They're computed after the failed transaction rolls back, so they already exclude the booking that just won.
+`alternatives` is always present (possibly empty). It holds up to 5 open slots: the same **parent-local** day first, closest in time (the earlier wins a tie), then the following days in order. Earlier days are never offered. If the requested time was daytime for the parent (7:00 AM–9:00 PM in their zone), daytime alternatives come first and early-morning or late-night ones only fill any remaining places. They're computed after the failed transaction rolls back, so they already exclude the booking that just won.
 
 **409 `DUPLICATE_TRIAL` body:**
 
@@ -447,6 +448,10 @@ Header **`Idempotency-Key: <uuid>`** is required. `phone` is optional and must b
   - Unavailable times always show a short label ("Booked" or "Too soon"). Tapping one opens the full reason inline, e.g. "No mentor is free at 4:00 PM on Sat 14 Nov. Please pick another time.", with a "Next open time" button; nothing depends on hover.
   - Reasons are always about **that time**, never about the day or internal rules. A time where every covering mentor has hit their daily cap reads exactly like a booked one, because other times that day may well be open. The API still distinguishes them in `details.reason`.
   - Screen readers get the reason through `aria-describedby`.
+- **Daytime first:** the grid shows only times between **7:00 AM and 9:00 PM in the parent's own zone** by default, because no one books a young child's class at 2 AM. Those other slots exist only because Indian mentors' shifts for the US and Australia land at night in London, and vice versa.
+  - A toggle under the grid ("Show early-morning and late-night times (N)") reveals them, and the date strip's counts follow what's visible, so a day with only night slots says "No daytime times" rather than "5 open".
+  - 409 alternatives prefer daytime too.
+  - The hours are defined once, in [`daytime.ts`](packages/shared/src/time/daytime.ts), and shared by the web app and the API.
 - **Zone:** detected from the browser and changeable. If detection fails, the parent is asked before any times are shown.
 - **Phone:** the country code defaults from the zone (London → +44, New York → +1), so local formats are accepted.
 - **Slot taken while filling the form:**

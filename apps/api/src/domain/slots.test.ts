@@ -225,6 +225,30 @@ describe('DST: parent-local days built from India-time shifts', () => {
   });
 });
 
+describe('shift date across India midnight (the rule the daily cap depends on)', () => {
+  it('00:30 India slot of the 20:30 UK-evening shift keeps the previous day; next 20:30 starts a new shift', () => {
+    // Shift that starts Sat 27 Mar 2027, 20:30 India time.
+    const at2330 = mentorSlotAt(M1, utc('2027-03-27T18:00:00Z'));
+    const at0030 = mentorSlotAt(M1, utc('2027-03-27T19:00:00Z'));
+    const nextEvening = mentorSlotAt(M1, utc('2027-03-28T15:00:00Z'));
+
+    expect(formatInstant(at2330!.startUtc, INDIA)).toBe(
+      'Sat 27 Mar, 11:30 PM India time (GMT+5:30)',
+    );
+    expect(formatInstant(at0030!.startUtc, INDIA)).toBe(
+      'Sun 28 Mar, 12:30 AM India time (GMT+5:30)',
+    );
+    expect(formatInstant(nextEvening!.startUtc, INDIA)).toBe(
+      'Sun 28 Mar, 8:30 PM India time (GMT+5:30)',
+    );
+
+    expect(at2330!.shiftDate).toBe('2027-03-27');
+    expect(at0030!.shiftDate).toBe('2027-03-27'); // India calendar says 28 Mar; shift says 27 Mar
+    expect(nextEvening!.shiftDate).toBe('2027-03-28');
+    expect([at0030!.windowId, nextEvening!.windowId]).toEqual(['M1-w6', 'M1-w7']);
+  });
+});
+
 describe('mentorSlotAt', () => {
   it('finds the slot and its shift date, including after India midnight', () => {
     const slot = mentorSlotAt(M1, utc('2027-03-27T19:00:00Z'));

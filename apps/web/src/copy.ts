@@ -64,7 +64,8 @@ export const copy = {
     `${copy.conflictTitle(reason, when)} We've refreshed the times; please pick another.`,
   conflictLead:
     "Here are the nearest open times. Choose one, then confirm to book it with the details you've entered.",
-  bookThis: (when: string) => `Book ${when}`,
+  /** Label of the confirm button. A no-break space keeps "3:00 PM" together when it wraps. */
+  bookThis: (when: string) => `Book ${when.replace(/ (AM|PM)\b/, '\u00a0$1')}`,
   pickAnother: 'Or pick another time',
   duplicateTrial: (child: string, when: string) => `${child} already has a trial on ${when}.`,
   viewThatBooking: 'View that booking',

@@ -213,7 +213,7 @@ describe('BookingForm', () => {
     fireEvent.click(options[0]!);
     expect(options[0]!.getAttribute('aria-pressed')).toBe('true');
     expect(create).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: /^Book Fri 13 Nov, 5:00 PM/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Book Fri 13 Nov, 5:00\sPM/ })).toBeTruthy();
 
     // Changing your mind moves the selection and the confirm button.
     fireEvent.click(options[2]!);
@@ -221,9 +221,12 @@ describe('BookingForm', () => {
     expect(create).toHaveBeenCalledTimes(1);
     fireEvent.click(options[0]!);
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Book Fri 13 Nov, 5:00 PM London time (GMT+0)' }),
-    );
+    const confirm = screen.getByRole('button', {
+      name: /^Book Fri 13 Nov, 5:00\sPM London time \(GMT\+0\)$/,
+    });
+    // "5:00 PM" never splits across lines when the label wraps on a phone.
+    expect(confirm.textContent).toContain('5:00\u00a0PM');
+    fireEvent.click(confirm);
     await waitFor(() => expect(props.onBooked).toHaveBeenCalled());
     const [firstCall, secondCall] = create.mock.calls;
     expect(secondCall![0]).toEqual({ ...firstCall![0], startUtc: '2026-11-13T17:00:00Z' });

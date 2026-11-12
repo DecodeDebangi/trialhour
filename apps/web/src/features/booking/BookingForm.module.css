@@ -161,6 +161,7 @@
 
 .submit {
   min-height: 52px;
+  padding: var(--space-3) var(--space-5);
   border: none;
   border-radius: var(--radius-pill);
   background: var(--primary);
@@ -172,6 +173,14 @@
 
 .submit:hover {
   background: var(--primary-hover);
+}
+
+/* The confirm button carries a full date, time and zone, so it often wraps to two lines:
+   a rounded rectangle keeps wrapped text clear of the edges, where a pill would crowd it. */
+.confirm {
+  border-radius: var(--radius);
+  line-height: 1.35;
+  text-wrap: balance;
 }
 
 .submit[aria-busy='true'] {

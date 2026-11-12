@@ -362,7 +362,7 @@ export function BookingForm({
             {chosenAlternative && (
               <button
                 type="button"
-                className={styles.submit}
+                className={`${styles.submit} ${styles.confirm}`}
                 aria-busy={submitting}
                 disabled={submitting}
                 onClick={() => void submit(undefined, chosenAlternative)}

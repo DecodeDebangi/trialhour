@@ -2,15 +2,18 @@ import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { ZodError } from 'zod';
 import {
   InvalidTimeZoneError,
+  type DuplicateTrialResponse,
   type ErrorResponse,
   type SlotUnavailableResponse,
 } from '@codeyoung/shared';
-import { DomainError, SlotUnavailableError } from '../domain/errors.js';
+import { DomainError, DuplicateTrialError, SlotUnavailableError } from '../domain/errors.js';
 import { TransientDatabaseError } from '../repositories/errors.js';
 
 /** HTTP status for each domain error code. Anything unlisted is a server error. */
 const STATUS_BY_CODE: Readonly<Record<string, number>> = {
   VALIDATION_ERROR: 422,
+  IDEMPOTENCY_KEY_REUSED: 422,
+  IDEMPOTENCY_KEY_MISSING: 400,
   NOT_FOUND: 404,
 };
 
@@ -38,6 +41,14 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     const payload: SlotUnavailableResponse = {
       ...body(err.code, err.message, { reason: err.reason }),
       alternatives: [...err.alternatives],
+    };
+    res.status(409).json(payload);
+    return;
+  }
+  if (err instanceof DuplicateTrialError) {
+    const payload: DuplicateTrialResponse = {
+      ...body(err.code, err.message),
+      existingBooking: err.existingBooking,
     };
     res.status(409).json(payload);
     return;

@@ -2,11 +2,13 @@ import type { Pool } from '../db/pool.js';
 import { withTransaction } from '../db/tx.js';
 import { createBookingRepository, type BookingRepository } from './bookingRepo.js';
 import { TransientDatabaseError, pgErrorCode } from './errors.js';
+import { createIdempotencyRepository, type IdempotencyRepository } from './idempotencyRepo.js';
 import { createMentorRepository, type MentorRepository } from './mentorRepo.js';
 
 export interface TransactionRepositories {
   mentors: MentorRepository;
   bookings: BookingRepository;
+  idempotency: IdempotencyRepository;
 }
 
 export interface TransactionOptions {
@@ -37,6 +39,7 @@ export function createTransactionRunner(pool: Pool): RunInTransaction {
         return fn({
           mentors: createMentorRepository(client),
           bookings: createBookingRepository(client),
+          idempotency: createIdempotencyRepository(client),
         });
       });
     } catch (error) {

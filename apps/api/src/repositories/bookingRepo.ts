@@ -35,12 +35,30 @@ export interface BookingDetails {
   mentor: { id: string; name: string; timezone: string };
 }
 
+/** An upcoming confirmed trial for a parent + child. */
+export interface UpcomingTrial {
+  id: string;
+  startUtc: DateTime;
+  endUtc: DateTime;
+  childName: string;
+}
+
 export interface BookingRepository {
   /** Confirmed bookings starting in [start, end). */
   listBookedSlots(range: UtcRange): Promise<BookedSlot[]>;
   /** Throws MentorSlotTakenError if the unique (mentor, start) backstop fires. */
   insert(booking: NewBooking): Promise<void>;
   findById(id: string): Promise<BookingDetails | null>;
+  /**
+   * Transaction-scoped advisory lock on one parent + child, so two concurrent requests for
+   * the same child can't both pass the duplicate-trial check. Must run inside a transaction.
+   */
+  lockParentChild(emailNorm: string, childNorm: string): Promise<void>;
+  findUpcomingTrial(
+    emailNorm: string,
+    childNorm: string,
+    after: DateTime,
+  ): Promise<UpcomingTrial | null>;
 }
 
 const toUtc = (d: Date) => DateTime.fromJSDate(d, { zone: 'utc' });
@@ -69,6 +87,38 @@ export function createBookingRepository(db: Queryable): BookingRepository {
         if (pgErrorCode(error) === '23505') throw new MentorSlotTakenError();
         throw error;
       }
+    },
+
+    async lockParentChild(emailNorm, childNorm) {
+      await db.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
+        `parent-child|${emailNorm}|${childNorm}`,
+      ]);
+    },
+
+    async findUpcomingTrial(emailNorm, childNorm, after) {
+      const { rows } = await db.query<{
+        id: string;
+        start_utc: Date;
+        end_utc: Date;
+        child_name: string;
+      }>(
+        `SELECT id, start_utc, end_utc, child_name
+           FROM bookings
+          WHERE parent_email_norm = $1 AND child_name_norm = $2
+            AND status = 'confirmed' AND start_utc > $3
+          ORDER BY start_utc
+          LIMIT 1`,
+        [emailNorm, childNorm, after.toJSDate()],
+      );
+      const r = rows[0];
+      return r
+        ? {
+            id: r.id,
+            startUtc: toUtc(r.start_utc),
+            endUtc: toUtc(r.end_utc),
+            childName: r.child_name,
+          }
+        : null;
     },
 
     async findById(id) {

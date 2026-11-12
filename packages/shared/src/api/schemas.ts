@@ -84,3 +84,14 @@ export const slotUnavailableResponseSchema = errorResponseSchema.extend({
   alternatives: z.array(z.object({ startUtc: z.iso.datetime(), endUtc: z.iso.datetime() })),
 });
 export type SlotUnavailableResponse = z.infer<typeof slotUnavailableResponseSchema>;
+
+/** 409 DUPLICATE_TRIAL body: the error envelope plus the child's existing upcoming trial. */
+export const duplicateTrialResponseSchema = errorResponseSchema.extend({
+  existingBooking: z.object({
+    id: z.uuid(),
+    startUtc: z.iso.datetime(),
+    endUtc: z.iso.datetime(),
+    childName: z.string(),
+  }),
+});
+export type DuplicateTrialResponse = z.infer<typeof duplicateTrialResponseSchema>;

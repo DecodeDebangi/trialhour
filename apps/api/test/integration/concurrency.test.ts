@@ -31,7 +31,7 @@ function fire(url: string, starts: string[]): Promise<Result[]> {
     starts.map(async (startUtc, i) => {
       const res = await fetch(`${url}/api/bookings`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
         body: JSON.stringify(
           bookingBody(startUtc, { parentEmail: `p${i}@example.com`, childName: `Child ${i}` }),
         ),
@@ -74,6 +74,12 @@ async function gatedRace(url: string, starts: string[]) {
 
 const statuses = (results: Result[]) => results.map((r) => r.status).sort();
 
+/** Idempotency rows reference bookings, so clear them first. */
+async function clearBookings(sql: string, params: unknown[] = []) {
+  await admin.query('DELETE FROM idempotency_keys');
+  await admin.query(sql, params);
+}
+
 describe('X1: 20 parents race for one slot that 3 mentors cover', () => {
   let server: Awaited<ReturnType<typeof listen>>;
   beforeAll(async () => {
@@ -93,7 +99,7 @@ describe('X1: 20 parents race for one slot that 3 mentors cover', () => {
   };
 
   it('gated: all 20 transactions are in flight at once on separate connections; exactly 3 win', async () => {
-    await admin.query('DELETE FROM bookings WHERE start_utc = $1', [SLOT]);
+    await clearBookings('DELETE FROM bookings WHERE start_utc = $1', [SLOT]);
     const { blocked, results } = await gatedRace(server.url, Array(REQUESTS).fill(SLOT));
     expect(blocked).toBe(REQUESTS);
     check(results);
@@ -101,7 +107,7 @@ describe('X1: 20 parents race for one slot that 3 mentors cover', () => {
 
   it('ungated, repeated 20 times: always exactly 3 × 201 on 3 distinct mentors', async () => {
     for (let run = 0; run < 20; run++) {
-      await admin.query('DELETE FROM bookings WHERE start_utc = $1', [SLOT]);
+      await clearBookings('DELETE FROM bookings WHERE start_utc = $1', [SLOT]);
       check(await fire(server.url, Array(REQUESTS).fill(SLOT)));
     }
   });
@@ -151,7 +157,7 @@ describe('X2: the daily-cap race (different slots, one mentor)', () => {
   };
 
   it('gated: all 6 in flight at once; exactly 2 succeed and the cap holds', async () => {
-    await admin.query('DELETE FROM bookings');
+    await clearBookings('DELETE FROM bookings');
     const { blocked, results } = await gatedRace(server.url, REQUESTS_X2);
     expect(blocked).toBe(REQUESTS_X2.length);
     await check(results);
@@ -159,8 +165,110 @@ describe('X2: the daily-cap race (different slots, one mentor)', () => {
 
   it('ungated, repeated 20 times: never more than 2 bookings in the shift', async () => {
     for (let run = 0; run < 20; run++) {
-      await admin.query('DELETE FROM bookings');
+      await clearBookings('DELETE FROM bookings');
       await check(await fire(server.url, REQUESTS_X2));
     }
+  });
+});
+
+describe('X3 and X5: one parent racing themselves', () => {
+  const UK = (hh: number) => `2027-03-27T${hh}:00:00Z`;
+  let server: Awaited<ReturnType<typeof listen>>;
+
+  beforeAll(async () => {
+    const { app } = await seededApp(appPool, NOW);
+    server = await listen(app);
+  });
+  afterAll(() => server.close());
+
+  /** Posts the given bodies in parallel; `keys` lets two requests share an Idempotency-Key. */
+  function postAll(bodies: object[], keys: string[]): Promise<Result[]> {
+    return Promise.all(
+      bodies.map(async (body, i) => {
+        const res = await fetch(`${server.url}/api/bookings`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': keys[i]! },
+          body: JSON.stringify(body),
+        });
+        return { status: res.status, body: (await res.json()) as Result['body'] };
+      }),
+    );
+  }
+
+  /** Same gate as above: hold every transaction in Postgres, then release them together. */
+  async function gated(run: () => Promise<Result[]>, expectedBlocked: number) {
+    const gate = await admin.connect();
+    await gate.query('BEGIN');
+    await gate.query('LOCK TABLE bookings IN ACCESS EXCLUSIVE MODE');
+    const { rows } = await gate.query<{ pid: number }>('SELECT pg_backend_pid() AS pid');
+    const inflight = run();
+    const blocked = await waitForBlockedSessions(rows[0]!.pid, expectedBlocked);
+    await gate.query('ROLLBACK');
+    gate.release();
+    return { blocked, results: await inflight };
+  }
+
+  const bookingsFor = async (email: string) =>
+    (
+      await admin.query<{ n: number }>(
+        'SELECT count(*)::int AS n FROM bookings WHERE parent_email = $1',
+        [email],
+      )
+    ).rows[0]!.n;
+
+  describe('X3: the same request twice with the same Idempotency-Key (double tap, retry)', () => {
+    const body = bookingBody(UK(15), { parentEmail: 'x3@example.com', childName: 'Leo' });
+
+    const check = async (results: Result[]) => {
+      expect(statuses(results)).toEqual([200, 201]);
+      expect(results[0]!.body).toEqual(results[1]!.body); // one response replayed verbatim
+      expect(await bookingsFor('x3@example.com')).toBe(1);
+    };
+
+    it('gated: both in flight at once → one booking, identical responses', async () => {
+      await clearBookings("DELETE FROM bookings WHERE parent_email = 'x3@example.com'");
+      const key = crypto.randomUUID();
+      const { blocked, results } = await gated(() => postAll([body, body], [key, key]), 2);
+      expect(blocked).toBe(2);
+      await check(results);
+    });
+
+    it('ungated, repeated 20 times', async () => {
+      for (let run = 0; run < 20; run++) {
+        await clearBookings("DELETE FROM bookings WHERE parent_email = 'x3@example.com'");
+        const key = crypto.randomUUID();
+        await check(await postAll([body, body], [key, key]));
+      }
+    });
+  });
+
+  describe('X5: the same child booked into two different slots at once', () => {
+    const bodies = [UK(15), UK(17)].map((start) =>
+      bookingBody(start, { parentEmail: 'x5@example.com', childName: 'Maya' }),
+    );
+
+    const check = async (results: Result[]) => {
+      expect(statuses(results)).toEqual([201, 409]);
+      const loser = results.find((r) => r.status === 409)!;
+      expect((loser.body as { error: { code: string } }).error.code).toBe('DUPLICATE_TRIAL');
+      expect(await bookingsFor('x5@example.com')).toBe(1);
+    };
+
+    it('gated: both in flight at once → exactly one trial, the other gets DUPLICATE_TRIAL', async () => {
+      await clearBookings("DELETE FROM bookings WHERE parent_email = 'x5@example.com'");
+      const { blocked, results } = await gated(
+        () => postAll(bodies, [crypto.randomUUID(), crypto.randomUUID()]),
+        2,
+      );
+      expect(blocked).toBe(2);
+      await check(results);
+    });
+
+    it('ungated, repeated 20 times', async () => {
+      for (let run = 0; run < 20; run++) {
+        await clearBookings("DELETE FROM bookings WHERE parent_email = 'x5@example.com'");
+        await check(await postAll(bodies, [crypto.randomUUID(), crypto.randomUUID()]));
+      }
+    });
   });
 });

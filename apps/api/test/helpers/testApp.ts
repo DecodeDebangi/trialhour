@@ -14,6 +14,7 @@ import { mentorSlotAt } from '../../src/domain/slots.js';
 import type { BookingPolicy } from '../../src/domain/types.js';
 import { scheduleOf } from '../../src/db/seed.js';
 import { createBookingRepository, insertBooking } from '../../src/repositories/bookingRepo.js';
+import { createIdempotencyRepository } from '../../src/repositories/idempotencyRepo.js';
 import { createMentorRepository } from '../../src/repositories/mentorRepo.js';
 import {
   createTransactionRunner,
@@ -47,7 +48,9 @@ export async function seededApp(
   });
   const bookingService = new BookingService({
     runInTransaction: createTransactionRunner(pool),
+    mentors: createMentorRepository(pool),
     bookings: createBookingRepository(pool),
+    idempotency: createIdempotencyRepository(pool),
     clock,
     policy: TEST_POLICY,
     strategy: createAssignmentStrategy(options.strategy ?? 'capacity-preserving'),

@@ -4,6 +4,7 @@ import { createClock } from './clock.js';
 import { loadConfig } from './config.js';
 import { createPool } from './db/pool.js';
 import { createBookingRepository } from './repositories/bookingRepo.js';
+import { createIdempotencyRepository } from './repositories/idempotencyRepo.js';
 import { createMentorRepository } from './repositories/mentorRepo.js';
 import { createTransactionRunner } from './repositories/transaction.js';
 import { createAssignmentStrategy } from './domain/assignment/index.js';
@@ -28,7 +29,9 @@ const slotService = new SlotService({
 
 const bookingService = new BookingService({
   runInTransaction: createTransactionRunner(pool),
+  mentors: createMentorRepository(pool),
   bookings: createBookingRepository(pool),
+  idempotency: createIdempotencyRepository(pool),
   clock,
   policy,
   strategy: createAssignmentStrategy(config.assignmentStrategy),

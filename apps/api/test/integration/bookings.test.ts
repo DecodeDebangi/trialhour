@@ -1,7 +1,12 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { DateTime } from 'luxon';
-import { bookingResponseSchema, slotUnavailableResponseSchema } from '@codeyoung/shared';
+import type { Express } from 'express';
+import {
+  bookingResponseSchema,
+  duplicateTrialResponseSchema,
+  slotUnavailableResponseSchema,
+} from '@codeyoung/shared';
 import { createBookingRepository } from '../../src/repositories/bookingRepo.js';
 import { MentorSlotTakenError } from '../../src/repositories/errors.js';
 import { createTestPool } from '../helpers/testDb.js';
@@ -16,11 +21,15 @@ const NOW = '2027-03-20T00:00:00Z';
 const UK = (hh: number) => `2027-03-27T${String(hh).padStart(2, '0')}:00:00Z`;
 const UK_IDS = ['M1', 'M2', 'M3'].map(mentorId);
 
+const post = (app: Express, body: object, key: string = crypto.randomUUID()) =>
+  request(app).post('/api/bookings').set('Idempotency-Key', key).send(body);
+
 describe('POST /api/bookings — happy path', () => {
   it('books, assigns an eligible mentor and returns the confirmation', async () => {
     const { app } = await seededApp(pool, NOW);
     const res = await request(app)
       .post('/api/bookings')
+      .set('Idempotency-Key', crypto.randomUUID())
       .send(bookingBody(UK(15)));
     expect(res.status).toBe(201);
     const booking = bookingResponseSchema.parse(res.body);
@@ -43,6 +52,7 @@ describe('POST /api/bookings — happy path', () => {
     const { app } = await seededApp(pool, NOW);
     const created = await request(app)
       .post('/api/bookings')
+      .set('Idempotency-Key', crypto.randomUUID())
       .send(bookingBody(UK(15)));
     const fetched = await request(app).get(`/api/bookings/${created.body.id}`);
     expect(fetched.status).toBe(200);
@@ -71,6 +81,7 @@ describe('POST /api/bookings — capacity rules', () => {
 
     const third = await request(app)
       .post('/api/bookings')
+      .set('Idempotency-Key', crypto.randomUUID())
       .send(bookingBody(UK(17)));
     expect(third.status).toBe(201);
     expect(third.body.mentor.id).not.toBe(mentorId('M1'));
@@ -79,7 +90,10 @@ describe('POST /api/bookings — capacity rules', () => {
     const nextEvening = '2027-03-28T15:00:00Z';
     await bookDirect(pool, 'M2', nextEvening);
     await bookDirect(pool, 'M3', nextEvening);
-    const res = await request(app).post('/api/bookings').send(bookingBody(nextEvening));
+    const res = await request(app)
+      .post('/api/bookings')
+      .set('Idempotency-Key', crypto.randomUUID())
+      .send(bookingBody(nextEvening, { childName: 'Amelia' }));
     expect(res.status).toBe(201);
     expect(res.body.mentor).toEqual({
       id: mentorId('M1'),
@@ -93,20 +107,23 @@ describe('POST /api/bookings — capacity rules', () => {
     // With nobody booked, capacity-preserving ties on scarcity and bookings → M1 by id.
     const first = await request(app)
       .post('/api/bookings')
+      .set('Idempotency-Key', crypto.randomUUID())
       .send(bookingBody(UK(15)));
     expect(first.body.mentor.id).toBe(mentorId('M1'));
     const second = await request(app)
       .post('/api/bookings')
+      .set('Idempotency-Key', crypto.randomUUID())
       .send(bookingBody(UK(15), { parentEmail: 'other@example.com', childName: 'Amelia' }));
     expect(second.status).toBe(201);
     expect([mentorId('M2'), mentorId('M3')]).toContain(second.body.mentor.id);
   });
 
-  it('C4: every covering mentor busy → 409 FULLY_BOOKED with alternatives (empty in P0)', async () => {
+  it('C4 + C10: every covering mentor busy → 409 FULLY_BOOKED with the 5 nearest alternatives', async () => {
     const { app } = await seededApp(pool, NOW);
     for (const key of ['M1', 'M2', 'M3']) await bookDirect(pool, key, UK(16));
     const res = await request(app)
       .post('/api/bookings')
+      .set('Idempotency-Key', crypto.randomUUID())
       .send(bookingBody(UK(16)));
     expect(res.status).toBe(409);
     expect(slotUnavailableResponseSchema.parse(res.body)).toEqual({
@@ -115,7 +132,11 @@ describe('POST /api/bookings — capacity rules', () => {
         message: 'Sorry, that time has just been taken.',
         details: { reason: 'FULLY_BOOKED' },
       },
-      alternatives: [],
+      // Same London day, closest first (15:00 and 17:00 tie at 1h; earlier wins), then 18, 19, 20.
+      alternatives: [15, 17, 18, 19, 20].map((h) => ({
+        startUtc: UK(h),
+        endUtc: `2027-03-27T${String(h + 1).padStart(2, '0')}:00:00Z`,
+      })),
     });
   });
 
@@ -127,6 +148,7 @@ describe('POST /api/bookings — capacity rules', () => {
     }
     const res = await request(app)
       .post('/api/bookings')
+      .set('Idempotency-Key', crypto.randomUUID())
       .send(bookingBody(UK(17)));
     expect(res.status).toBe(409);
     expect(res.body.error.details).toEqual({ reason: 'DAILY_LIMIT_REACHED' });
@@ -135,9 +157,97 @@ describe('POST /api/bookings — capacity rules', () => {
   it('C7: inside the 4h notice → 409 TOO_SOON', async () => {
     const { app } = await seededApp(pool, NOW);
     // 02:00Z = 07:30 India time, US-West shift, 2h from now.
-    const res = await request(app).post('/api/bookings').send(bookingBody('2027-03-20T02:00:00Z'));
+    const res = await request(app)
+      .post('/api/bookings')
+      .set('Idempotency-Key', crypto.randomUUID())
+      .send(bookingBody('2027-03-20T02:00:00Z'));
     expect(res.status).toBe(409);
     expect(res.body.error.details).toEqual({ reason: 'TOO_SOON' });
+  });
+});
+
+describe('POST /api/bookings — duplicate trials (C9)', () => {
+  it('same email + child with an upcoming trial → 409 DUPLICATE_TRIAL with that booking', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const first = await post(app, bookingBody(UK(15)));
+    expect(first.status).toBe(201);
+
+    // Different case and spacing still match.
+    const again = await post(
+      app,
+      bookingBody(UK(17), { parentEmail: ' Emma@Example.COM ', childName: '  oliver ' }),
+    );
+    expect(again.status).toBe(409);
+    expect(duplicateTrialResponseSchema.parse(again.body)).toEqual({
+      error: { code: 'DUPLICATE_TRIAL', message: 'Oliver already has a trial class booked.' },
+      existingBooking: {
+        id: first.body.id,
+        startUtc: UK(15),
+        endUtc: UK(16),
+        childName: 'Oliver',
+      },
+    });
+  });
+
+  it('same email, different child → 201 (one trial per child)', async () => {
+    const { app } = await seededApp(pool, NOW);
+    expect((await post(app, bookingBody(UK(15)))).status).toBe(201);
+    expect((await post(app, bookingBody(UK(17), { childName: 'Amelia' }))).status).toBe(201);
+  });
+
+  it('allowed again once the first trial is in the past', async () => {
+    const { app, clock } = await seededApp(pool, NOW);
+    expect((await post(app, bookingBody(UK(15)))).status).toBe(201);
+    clock.set('2027-03-27T16:30:00Z'); // the first trial has ended
+    expect((await post(app, bookingBody('2027-03-28T15:00:00Z'))).status).toBe(201);
+  });
+});
+
+describe('POST /api/bookings — idempotency', () => {
+  it('requires an Idempotency-Key header (400) that is a UUID (422)', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const missing = await request(app)
+      .post('/api/bookings')
+      .send(bookingBody(UK(15)));
+    expect(missing.status).toBe(400);
+    expect(missing.body.error.code).toBe('IDEMPOTENCY_KEY_MISSING');
+    const malformed = await request(app)
+      .post('/api/bookings')
+      .set('Idempotency-Key', 'not-a-uuid')
+      .send(bookingBody(UK(15)));
+    expect(malformed.status).toBe(422);
+  });
+
+  it('a retry with the same key and body replays the original booking (200), creating nothing new', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const key = crypto.randomUUID();
+    const first = await post(app, bookingBody(UK(15)), key);
+    const retry = await post(app, bookingBody(UK(15)), key);
+    expect([first.status, retry.status]).toEqual([201, 200]);
+    expect(retry.headers['idempotent-replayed']).toBe('true');
+    expect(retry.body).toEqual(first.body);
+    const count = await pool.query(
+      "SELECT count(*)::int AS n FROM bookings WHERE parent_email = 'emma@example.com'",
+    );
+    expect(count.rows[0].n).toBe(1);
+  });
+
+  it('X4: same key, different body → 422 IDEMPOTENCY_KEY_REUSED', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const key = crypto.randomUUID();
+    expect((await post(app, bookingBody(UK(15)), key)).status).toBe(201);
+    const reused = await post(app, bookingBody(UK(17), { childName: 'Amelia' }), key);
+    expect(reused.status).toBe(422);
+    expect(reused.body.error.code).toBe('IDEMPOTENCY_KEY_REUSED');
+  });
+
+  it('a failed attempt does not consume the key: the same key can succeed later', async () => {
+    const { app } = await seededApp(pool, NOW);
+    for (const key of ['M1', 'M2', 'M3']) await bookDirect(pool, key, UK(16));
+    const idem = crypto.randomUUID();
+    expect((await post(app, bookingBody(UK(16)), idem)).status).toBe(409);
+    await pool.query('DELETE FROM bookings WHERE start_utc = $1', [UK(16)]);
+    expect((await post(app, bookingBody(UK(16)), idem)).status).toBe(201);
   });
 });
 
@@ -154,7 +264,10 @@ describe('POST /api/bookings — validation (422 / 400)', () => {
     ['bad phone', bookingBody(UK(15), { phone: '07700 900123' }), 'phone'],
   ])('%s → 422', async (_label, body, path) => {
     const { app } = await seededApp(pool, NOW);
-    const res = await request(app).post('/api/bookings').send(body);
+    const res = await request(app)
+      .post('/api/bookings')
+      .set('Idempotency-Key', crypto.randomUUID())
+      .send(body);
     expect(res.status).toBe(422);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
     if (path) {
@@ -177,7 +290,10 @@ describe('POST /api/bookings — validation (422 / 400)', () => {
   it('nothing is written when a request is rejected', async () => {
     const { app } = await seededApp(pool, NOW);
     const before = await pool.query('SELECT count(*)::int AS n FROM bookings');
-    await request(app).post('/api/bookings').send(bookingBody('2027-03-27T15:30:00Z'));
+    await request(app)
+      .post('/api/bookings')
+      .set('Idempotency-Key', crypto.randomUUID())
+      .send(bookingBody('2027-03-27T15:30:00Z'));
     const after = await pool.query('SELECT count(*)::int AS n FROM bookings');
     expect(after.rows[0].n).toBe(before.rows[0].n);
   });
@@ -220,6 +336,7 @@ describe('backstop and timeouts', () => {
       const started = Date.now();
       const res = await request(app)
         .post('/api/bookings')
+        .set('Idempotency-Key', crypto.randomUUID())
         .send(bookingBody(UK(15)));
       const elapsed = Date.now() - started;
       expect(res.status).toBe(503);
@@ -234,6 +351,7 @@ describe('backstop and timeouts', () => {
     // Once the lock is released, the same request succeeds.
     const retry = await request(app)
       .post('/api/bookings')
+      .set('Idempotency-Key', crypto.randomUUID())
       .send(bookingBody(UK(15)));
     expect(retry.status).toBe(201);
   });
@@ -244,6 +362,7 @@ describe('backstop and timeouts', () => {
     });
     await request(app)
       .post('/api/bookings')
+      .set('Idempotency-Key', crypto.randomUUID())
       .send(bookingBody(UK(15)));
     const results = await Promise.all(
       Array.from({ length: 5 }, () => pool.query('SHOW lock_timeout')),

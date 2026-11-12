@@ -57,3 +57,39 @@ export class BookingNotFoundError extends DomainError {
     this.name = 'BookingNotFoundError';
   }
 }
+
+export interface ExistingTrial {
+  id: string;
+  startUtc: string;
+  endUtc: string;
+  childName: string;
+}
+
+/** The same parent + child already has an upcoming trial (→ 409 with that booking). */
+export class DuplicateTrialError extends DomainError {
+  readonly code = 'DUPLICATE_TRIAL';
+
+  constructor(readonly existingBooking: ExistingTrial) {
+    super(`${existingBooking.childName} already has a trial class booked.`);
+    this.name = 'DuplicateTrialError';
+  }
+}
+
+export class IdempotencyKeyMissingError extends DomainError {
+  readonly code = 'IDEMPOTENCY_KEY_MISSING';
+
+  constructor() {
+    super('An Idempotency-Key header (a UUID) is required for this request.');
+    this.name = 'IdempotencyKeyMissingError';
+  }
+}
+
+/** The key was already used for a different request body (→ 422). */
+export class IdempotencyKeyReusedError extends DomainError {
+  readonly code = 'IDEMPOTENCY_KEY_REUSED';
+
+  constructor() {
+    super('This Idempotency-Key was already used for a different booking request.');
+    this.name = 'IdempotencyKeyReusedError';
+  }
+}

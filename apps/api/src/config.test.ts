@@ -37,6 +37,13 @@ describe('loadConfig', () => {
     expect(() => loadConfig({})).toThrow(/DATABASE_URL/);
   });
 
+  it('caps BOOKING_HORIZON_DAYS at 30 (the slots endpoint lists at most 31 dates)', () => {
+    expect(loadConfig({ ...base, BOOKING_HORIZON_DAYS: '30' }).bookingHorizonDays).toBe(30);
+    expect(() => loadConfig({ ...base, BOOKING_HORIZON_DAYS: '31' })).toThrow(
+      /BOOKING_HORIZON_DAYS/,
+    );
+  });
+
   it('rejects an unknown strategy', () => {
     expect(() => loadConfig({ ...base, ASSIGNMENT_STRATEGY: 'random' })).toThrow(
       /ASSIGNMENT_STRATEGY/,

@@ -10,7 +10,8 @@ const envSchema = z
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     PORT: z.coerce.number().int().min(1).max(65535).default(3001),
     MIN_NOTICE_MINUTES: z.coerce.number().int().min(0).default(240),
-    BOOKING_HORIZON_DAYS: z.coerce.number().int().min(1).max(60).default(14),
+    // ≤ 30 so the default slots range (today … today + horizon) stays within MAX_RANGE_DAYS (31).
+    BOOKING_HORIZON_DAYS: z.coerce.number().int().min(1).max(30).default(14),
     MENTOR_DAILY_CAP: z.coerce.number().int().min(1).default(2),
     ASSIGNMENT_STRATEGY: z.enum(ASSIGNMENT_STRATEGY_NAMES).default('capacity-preserving'),
     NOW_OVERRIDE: z.iso.datetime({ offset: true }).optional(),

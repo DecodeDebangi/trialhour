@@ -35,7 +35,7 @@ export interface BookingDetails {
   mentor: { id: string; name: string; timezone: string };
 }
 
-/** An upcoming confirmed trial for a parent + child. */
+/** A confirmed trial for a parent + child that hasn't ended yet (upcoming or in progress). */
 export interface UpcomingTrial {
   id: string;
   startUtc: DateTime;
@@ -105,7 +105,7 @@ export function createBookingRepository(db: Queryable): BookingRepository {
         `SELECT id, start_utc, end_utc, child_name
            FROM bookings
           WHERE parent_email_norm = $1 AND child_name_norm = $2
-            AND status = 'confirmed' AND start_utc > $3
+            AND status = 'confirmed' AND end_utc > $3
           ORDER BY start_utc
           LIMIT 1`,
         [emailNorm, childNorm, after.toJSDate()],

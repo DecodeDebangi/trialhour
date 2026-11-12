@@ -249,6 +249,17 @@ describe('shift date across India midnight (the rule the daily cap depends on)',
   });
 });
 
+describe('a class whose hour spans a DST change', () => {
+  it('06:00Z on 14 Mar 2027 lasts 60 real minutes: 1:00 AM (GMT-5) to 3:00 AM (GMT-4) in New York', () => {
+    const slot = mentorSlotAt(M9, utc('2027-03-14T06:00:00Z'))!; // 11:30 AM India
+    expect(slot.endUtc.toISO()).toBe('2027-03-14T07:00:00.000Z');
+    expect(slot.endUtc.diff(slot.startUtc, 'minutes').minutes).toBe(60);
+    expect(formatInstant(slot.startUtc, NY)).toBe('Sun 14 Mar, 1:00 AM New York time (GMT-5)');
+    expect(formatInstant(slot.endUtc, NY)).toBe('Sun 14 Mar, 3:00 AM New York time (GMT-4)');
+    expect(formatInstant(slot.startUtc, INDIA)).toBe('Sun 14 Mar, 11:30 AM India time (GMT+5:30)');
+  });
+});
+
 describe('mentorSlotAt', () => {
   it('finds the slot and its shift date, including after India midnight', () => {
     const slot = mentorSlotAt(M1, utc('2027-03-27T19:00:00Z'));

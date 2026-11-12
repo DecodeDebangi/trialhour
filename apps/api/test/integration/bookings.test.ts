@@ -196,6 +196,16 @@ describe('POST /api/bookings — duplicate trials (C9)', () => {
     expect((await post(app, bookingBody(UK(17), { childName: 'Amelia' }))).status).toBe(201);
   });
 
+  it('a trial in progress also blocks a second one (end_utc > now)', async () => {
+    const { app, clock } = await seededApp(pool, NOW);
+    const first = await post(app, bookingBody(UK(15)));
+    expect(first.status).toBe(201);
+    clock.set('2027-03-27T15:30:00Z'); // halfway through the first trial
+    const again = await post(app, bookingBody('2027-03-28T15:00:00Z'));
+    expect(again.status).toBe(409);
+    expect(again.body.existingBooking.id).toBe(first.body.id);
+  });
+
   it('allowed again once the first trial is in the past', async () => {
     const { app, clock } = await seededApp(pool, NOW);
     expect((await post(app, bookingBody(UK(15)))).status).toBe(201);
@@ -311,6 +321,30 @@ describe('outbox and calendar (X6)', () => {
       (await request(app).get('/api/bookings/6f1c2b1e-0000-4000-8000-000000000999/calendar.ics'))
         .status,
     ).toBe(404);
+  });
+});
+
+describe('a class whose hour spans the US clock change (§6 edge case)', () => {
+  it('06:00Z on Sun 14 Mar 2027 ends at 07:00Z in the API, the .ics and the email', async () => {
+    const { app } = await seededApp(pool, '2027-03-10T00:00:00Z');
+    const res = await post(
+      app,
+      bookingBody('2027-03-14T06:00:00Z', { parentTimezone: 'America/New_York' }),
+    );
+    expect(res.status).toBe(201);
+    expect([res.body.startUtc, res.body.endUtc]).toEqual([
+      '2027-03-14T06:00:00Z',
+      '2027-03-14T07:00:00Z',
+    ]);
+    // On New York clocks that hour reads 1:00 AM (GMT-5) → 3:00 AM (GMT-4).
+    const ics = (await request(app).get(res.body.icsUrl)).text.replace(/\r\n /g, '');
+    expect(ics).toContain('DTSTART:20270314T060000Z');
+    expect(ics).toContain('DTEND:20270314T070000Z');
+    const email = await pool.query(
+      "SELECT body_text FROM outbox_messages WHERE booking_id = $1 AND recipient = 'parent'",
+      [res.body.id],
+    );
+    expect(email.rows[0].body_text).toContain('When: Sun 14 Mar, 1:00 AM New York time (GMT-5)');
   });
 });
 

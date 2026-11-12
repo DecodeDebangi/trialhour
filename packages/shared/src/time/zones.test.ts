@@ -5,6 +5,9 @@ describe('isValidZone', () => {
   it.each([
     'America/New_York',
     'America/Indiana/Indianapolis',
+    'America/Indianapolis',
+    'America/Argentina/Buenos_Aires',
+    'America/Buenos_Aires',
     'America/Phoenix',
     'Europe/London',
     'Europe/Dublin',
@@ -13,6 +16,9 @@ describe('isValidZone', () => {
     'Australia/Sydney',
     'Australia/Brisbane',
     'Etc/UTC',
+    'Etc/GMT',
+    'Etc/Universal',
+    'Etc/Zulu',
     'UTC',
   ])('accepts %s', (zone) => {
     expect(isValidZone(zone)).toBe(true);
@@ -27,6 +33,7 @@ describe('isValidZone', () => {
     ['+05:30', 'fixed offset'],
     ['america/new_york', 'non-canonical case'],
     ['Nope/Zone', 'unknown'],
+    ['Etc/Unknown', 'what some browsers report when detection fails'],
     ['', 'empty'],
   ])('rejects %s (%s)', (zone) => {
     expect(isValidZone(zone)).toBe(false);

@@ -6,8 +6,17 @@ import { assertValidZone } from './zones.js';
 const ZONE_LABEL_OVERRIDES: Readonly<Record<string, string>> = {
   'Asia/Kolkata': 'India time',
   'Asia/Calcutta': 'India time',
+  // Browsers can report any of these UTC aliases; all of them are plain UTC.
   UTC: 'UTC',
   'Etc/UTC': 'UTC',
+  'Etc/UCT': 'UTC',
+  'Etc/GMT': 'UTC',
+  'Etc/GMT0': 'UTC',
+  'Etc/GMT+0': 'UTC',
+  'Etc/GMT-0': 'UTC',
+  'Etc/Greenwich': 'UTC',
+  'Etc/Universal': 'UTC',
+  'Etc/Zulu': 'UTC',
 };
 
 /** "New York time", "India time", "Indianapolis time", "UTC". */

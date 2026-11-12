@@ -22,6 +22,33 @@ describe('zoneLabel', () => {
     expect(zoneLabel('Etc/UTC')).toBe('UTC');
   });
 
+  it('treats every UTC alias a browser may report as UTC', () => {
+    for (const zone of [
+      'Etc/UTC',
+      'Etc/UCT',
+      'Etc/GMT',
+      'Etc/Greenwich',
+      'Etc/Universal',
+      'Etc/Zulu',
+    ]) {
+      expect(zoneLabel(zone)).toBe('UTC');
+      expect(formatInstant('2026-11-12T21:00:00Z', zone)).toBe('Thu 12 Nov, 9:00 PM UTC');
+    }
+  });
+
+  it('labels legacy alias Asia/Calcutta and nested zones correctly', () => {
+    expect(formatInstant('2026-11-12T21:00:00Z', 'Asia/Calcutta')).toBe(
+      'Fri 13 Nov, 2:30 AM India time (GMT+5:30)',
+    );
+    expect(zoneLabel('America/Argentina/Buenos_Aires')).toBe('Buenos Aires time');
+    expect(formatInstant('2026-11-12T21:00:00Z', 'America/Argentina/Buenos_Aires')).toBe(
+      'Thu 12 Nov, 6:00 PM Buenos Aires time (GMT-3)',
+    );
+    expect(formatInstant('2026-11-12T21:00:00Z', 'America/Indiana/Indianapolis')).toBe(
+      'Thu 12 Nov, 4:00 PM Indianapolis time (GMT-5)',
+    );
+  });
+
   it('never shows the POSIX-inverted Etc/GMT name', () => {
     expect(zoneLabel('Etc/GMT+5')).toBe('Fixed-offset time');
   });

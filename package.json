@@ -13,11 +13,13 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm test --workspaces --if-present",
     "format": "prettier --write .",
-    "dev": "npm run dev -w @codeyoung/api",
+    "dev": "concurrently -k -n api,web -c cyan,magenta \"npm run dev -w @codeyoung/api\" \"npm run dev -w @codeyoung/web\"",
     "db:setup": "npm run db:setup -w @codeyoung/api",
-    "db:seed": "npm run db:seed -w @codeyoung/api"
+    "db:seed": "npm run db:seed -w @codeyoung/api",
+    "build": "npm run build -w @codeyoung/web"
   },
   "devDependencies": {
+    "concurrently": "^10.0.7",
     "prettier": "^3.10.1",
     "typescript": "^7.0.2"
   }

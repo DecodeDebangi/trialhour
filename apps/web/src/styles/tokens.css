@@ -1,0 +1,43 @@
+/* Design tokens. Contrast pairs used for text all meet WCAG AA (see README). */
+:root {
+  --bg: #fbf8f3;
+  --surface: #ffffff;
+  --border: #e8e1d5;
+  --border-strong: #c9bfae;
+  --ink: #1f2a44;
+  --ink-muted: #5b6475;
+
+  --primary: #0f766e;
+  --primary-hover: #0b5f58;
+  --primary-ink: #ffffff;
+  --primary-soft: #e6f3f1;
+
+  --accent: #f2b544;
+  --accent-soft: #fdf3dc;
+
+  --unavailable-bg: #f1eee8;
+  --unavailable-ink: #5b6475;
+
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --success-soft: #e8f5ee;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --tap: 44px;
+  --shadow: 0 1px 2px rgb(31 42 68 / 6%), 0 4px 16px rgb(31 42 68 / 6%);
+
+  --font:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: ui-rounded, 'SF Pro Rounded', var(--font);
+}

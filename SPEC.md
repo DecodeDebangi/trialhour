@@ -197,7 +197,7 @@ The hard part of this system is a transaction across several rows: check the cap
 | root | — | `typescript`, `concurrently` (runs api + web from one `npm run dev`), `prettier` |
 | shared | `luxon`, `zod` | `vitest`, `@types/luxon` |
 | api | `express`, `pg`, `zod`, `luxon` | `tsx`, `vitest`, `supertest`, `@types/node`, `@types/express`, `@types/pg`, `@types/supertest` |
-| web | `react`, `react-dom`, `react-router-dom` | `vite`, `@vitejs/plugin-react`, `vitest`, `jsdom`, `@testing-library/react` |
+| web | `react`, `react-dom`, `react-router-dom` | `vite`, `@vitejs/plugin-react`, `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/dom`, `@types/react`, `@types/react-dom` |
 | P2 | — | `@playwright/test` |
 
 There is no data-fetching library (plain `fetch` + small hooks), no CSS framework (CSS modules), no uuid package (`crypto.randomUUID`) and no migration library.

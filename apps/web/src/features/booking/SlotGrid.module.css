@@ -1,0 +1,126 @@
+.section {
+  margin-top: var(--space-5);
+}
+
+.heading {
+  font-size: 1.125rem;
+}
+
+.subheading {
+  margin: var(--space-1) 0 var(--space-3);
+  color: var(--ink-muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: row dense; /* lets later times fill the gap before an open reason panel */
+  gap: var(--space-2);
+}
+
+@media (min-width: 480px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.slot {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: var(--space-2);
+  border-radius: var(--radius);
+  border: 1px solid var(--primary);
+  background: var(--surface);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  cursor: pointer;
+}
+
+.slot:hover {
+  background: var(--primary-soft);
+}
+
+.selected,
+.selected:hover {
+  background: var(--primary);
+  color: var(--primary-ink);
+}
+
+.unavailable,
+.unavailable:hover {
+  border: 1px dashed var(--border-strong);
+  background: var(--unavailable-bg);
+  color: var(--unavailable-ink);
+  font-weight: 600;
+}
+
+.expanded {
+  border-style: solid;
+  border-color: var(--unavailable-ink);
+}
+
+.time {
+  line-height: 1.2;
+}
+
+.offset,
+.reasonShort {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.reasonShort {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.panel {
+  grid-column: 1 / -1;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+}
+
+.panel p {
+  margin: 0;
+}
+
+.empty {
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+}
+
+.empty p {
+  margin: 0 0 var(--space-3);
+}
+
+.empty p:last-child {
+  margin-bottom: 0;
+}
+
+.next {
+  margin-top: var(--space-3);
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-hover);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}

@@ -1,0 +1,92 @@
+.hero {
+  margin: var(--space-3) 0 var(--space-5);
+}
+
+.title {
+  font-size: clamp(1.625rem, 6vw, 2.125rem);
+  letter-spacing: -0.01em;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.facts li {
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.skeletonStrip {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  overflow: hidden;
+}
+
+.skeletonChip,
+.skeletonSlot {
+  flex: none;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, #efe9df 0%, #f7f3ec 50%, #efe9df 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skeletonChip {
+  width: 84px;
+  height: 84px;
+}
+
+.skeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+.skeletonSlot {
+  height: 56px;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.stickyBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: rgb(251 248 243 / 94%);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(6px);
+}
+
+.stickyButton {
+  display: block;
+  width: 100%;
+  max-width: 688px;
+  margin: 0 auto;
+  min-height: 52px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  cursor: pointer;
+}

@@ -1,6 +1,9 @@
 # Assignment brief (Codeyoung's document, not ours to publish)
 *.pdf
 
+# Local AI session transcripts (the final TRANSCRIPT.md is committed)
+TRANSCRIPT-session*.md
+
 # Env
 .env
 .env.*

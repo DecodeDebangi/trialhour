@@ -196,7 +196,7 @@ The hard part of this system is a transaction across several rows: check the cap
 |---|---|---|
 | root | — | `typescript`, `concurrently` (runs api + web from one `npm run dev`), `prettier` |
 | shared | `luxon`, `zod` | `vitest`, `@types/luxon` |
-| api | `express`, `pg`, `zod`, `luxon` | `tsx`, `vitest`, `supertest`, `@types/express`, `@types/pg`, `@types/supertest` |
+| api | `express`, `pg`, `zod`, `luxon` | `tsx`, `vitest`, `supertest`, `@types/node`, `@types/express`, `@types/pg`, `@types/supertest` |
 | web | `react`, `react-dom`, `react-router-dom` | `vite`, `@vitejs/plugin-react`, `vitest`, `jsdom`, `@testing-library/react` |
 | P2 | — | `@playwright/test` |
 

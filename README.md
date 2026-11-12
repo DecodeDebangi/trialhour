@@ -4,11 +4,23 @@ A web app where a parent books a free 1:1 coding trial for their child. The pare
 
 Built for the Codeyoung Senior Full Stack Engineer assignment. The agreed specification is in [SPEC.md](SPEC.md); the project conventions used during development are in [CLAUDE.md](CLAUDE.md).
 
-**Status:** P0 (core) is complete: slot generation, time-zone/DST handling, the booking transaction with capacity and concurrency guarantees, and the mobile-first booking and confirmation UI. P1 and P2 items are listed under [What I'd do next](#out-of-scope-and-what-id-do-next).
+**Status:**
+- **P0 (core) is complete:** slot generation, time-zone/DST handling, the booking transaction with capacity and concurrency guarantees, and the mobile-first booking and confirmation UI.
+- **P1 is complete:**
+  - nearest alternatives on every 409, chosen and confirmed in the form;
+  - the duplicate-trial check;
+  - enforced idempotency;
+  - parent and mentor emails written in the booking transaction, with a demo outbox page;
+  - `.ics` download.
+- **P2** (mentor page, Playwright happy path) is listed under [What I'd do next](#out-of-scope-and-what-id-do-next).
 
-| Booking (phone) | Unavailable slot reason | Confirmation |
+| Booking (phone) | Unavailable slot reason | Slot just taken → alternatives |
 |---|---|---|
 | _screenshot placeholder_ | _screenshot placeholder_ | _screenshot placeholder_ |
+
+| Confirmation | Outbox: parent and mentor emails side by side |
+|---|---|
+| _screenshot placeholder_ | _screenshot placeholder_ |
 
 ---
 
@@ -59,7 +71,7 @@ NOW_OVERRIDE=2027-03-13T12:00:00Z docker compose up --build
 
 Then pick New York and compare Sat 13 Mar with Sun 14 Mar: the same India-time shift starts at 3:00 PM (GMT-5) on Saturday and 4:00 PM (GMT-4) on Sunday.
 
-**What the seed shows on first load** (relative to "now"):
+**What the seed shows on first load** (relative to "now"). Every demo booking already has its two emails in the outbox at **http://localhost:5173/outbox**.
 - Tomorrow's UK-evening shift is full because all three UK mentors are at their daily cap. In London time, Fri 3–7 PM shows "✕ Mentors full".
 - Tomorrow's first US-East slot is booked by all three East-coast mentors, so it shows "✕ Booked".
 - Slots in the next 4 hours show "✕ Too soon".
@@ -89,14 +101,14 @@ docker compose up -d db   # integration tests need Postgres on :5433
 npm test                  # all workspaces
 ```
 
-**245 tests**, all passing:
+**291 tests**, all passing:
 
 | Workspace | Tests | What they cover |
 |---|---|---|
 | `packages/shared` | 64 | Time formatting, zone validation, local day bounds (23h and 25h days) |
-| `apps/api` unit | 89 | Pure domain logic: slots and shift dates, availability and reasons, booking window, both assignment strategies, the seed planner, config, clock, the booking-service backstop |
-| `apps/api` integration | 48 | Real Postgres: migrations, seed, slots API, booking API, **concurrency (X1/X2)**, lock timeouts |
-| `apps/web` | 44 | Components (date strip, slot grid, form, pages) plus pure helpers (phone, zones, days) |
+| `apps/api` unit | 110 | Pure domain logic: slots and shift dates, availability and reasons, booking window, both assignment strategies, alternatives, emails, `.ics`, request fingerprints, the seed planner, config, clock, the booking service (backstop, replay, duplicates, outbox) |
+| `apps/api` integration | 64 | Real Postgres: migrations, seed, slots/booking/outbox/calendar APIs, duplicate trials, idempotency, **concurrency (X1, X2, X3, X5)**, lock timeouts |
+| `apps/web` | 53 | Components and pages (date strip, slot grid, form with alternatives and duplicates, confirmation, outbox) plus pure helpers (phone, zones, days) |
 
 - **Traceable to the spec:** test names carry the IDs from the test matrix in [SPEC.md §11](SPEC.md#11-test-matrix) (T1–T16 for DST and zones, C1–C11 for capacity, X1–X2 for concurrency).
 - **Integration database:** integration tests use a separate `booking_test` database. It's rebuilt from the migrations once per run, and the test files run one at a time.
@@ -151,7 +163,8 @@ All instants are `timestamptz` (UTC), and zones are stored as IANA names. See [0
 - `bookings`: `start_utc`, `end_utc`, the mentor's **`shift_date`**, parent and child details, the parent's IANA zone, and the class link.
   - `UNIQUE (mentor_id, start_utc) WHERE status = 'confirmed'` is the double-booking backstop.
   - `(mentor_id, shift_date)` is indexed for the cap count.
-- `idempotency_keys`, `outbox_messages`: created now, used from P1.
+- `idempotency_keys`: a key, the request's fingerprint and the stored response. Written in the same transaction as the booking, so only successful bookings keep their key.
+- `outbox_messages`: the parent and mentor emails for each booking. Written in the same transaction as the booking, so the emails exist if and only if the booking does.
 
 Slots are computed, not stored. Seed data lives in [seedData.ts](apps/api/src/db/seedData.ts): 10 mentors with real names, each mapped to the M-numbers used in the spec.
 
@@ -181,12 +194,15 @@ MongoDB can do multi-document transactions, but it needs a replica set even loca
 | A4 | **Slots start on the UTC hour** (= :30 India time). | US, UK, Canadian and most Australian parents see whole hours. Adelaide, Darwin and Newfoundland see :30. With all slots on one grid, "busy at this slot" is a simple equality check. Seed validation checks a full year of real dates. |
 | A5 | **Windows stay fixed in India time.** | Mentor schedules don't follow US/UK DST, so on transition dates a slot moves by an hour *for parents*. That's realistic and is what the DST tests verify. |
 | A6 | **Bookable from 4 hours to 14 days ahead** (configurable). | The trial is a marketing funnel: a parent should be able to book while they're interested. The cost is that mentors sometimes get under 4 hours' notice; they see bookings immediately. 12 hours would be the cautious choice. |
-| A7 | **A parent is identified by email + child name** (normalised). | A parent with two kids can book one trial for each. (The duplicate-trial check is P1.) |
+| A7 | **A parent is identified by email + child name** (trimmed, lower-cased, spaces collapsed). | A parent with two kids can book one trial for each. A second *upcoming* trial for the same child is refused with a link to the first. |
 | A8 | **"Now" is injected** everywhere (`Clock`). | Tests and the DST demo run on fixed instants. The server clock is authoritative; the client's clock is never trusted. |
 | A9 | **No auth.** Booking pages use unguessable UUIDs. | Fine for a demo; listed under next steps. |
 | — | **No temporary slot holds (no Redis).** | At ~20 bookings/day, a parent losing a slot while filling in the form is rare. It's handled with a friendly 409 and a refreshed list rather than hold/expiry machinery. |
 | — | **No ORM; one Dockerfile; `vite preview` serves the web build.** | Fewer moving parts. The locking SQL is visible, and there's no nginx config to maintain. |
 | — | **A start time already in the past is "too soon" (409), not invalid (422).** | It almost always means the parent left the form open; alternatives help more than a validation error. |
+| — | **Choosing an alternative takes two taps: select, then confirm.** | Parents can't cancel or reschedule, so a mis-tap (tomorrow instead of today) would leave them stuck. |
+| — | **A failed attempt doesn't use up its Idempotency-Key.** | The key's row rolls back with the failed transaction, so a retry after a 409 or a timeout runs fresh. Only a successful booking's response is replayed. Keys don't expire yet (see next steps). |
+| — | **Emails are a mock outbox.** | Rows in `outbox_messages`, shown at `/outbox`. Sending them for real would be a worker reading this table (the transactional outbox pattern). |
 
 ## Time zones and DST
 
@@ -239,10 +255,14 @@ It's a greedy heuristic, not an optimum. True optimal assignment depends on futu
 [bookingService.ts](apps/api/src/services/bookingService.ts) runs these steps in one transaction:
 
 1. Set `lock_timeout = 3s` and `statement_timeout = 5s` for this transaction only (`set_config(…, true)`).
-2. Run the cheap checks first: on the hour grid, inside a window, not too soon, not beyond the horizon.
-3. `SELECT id FROM mentors WHERE id = ANY($1) ORDER BY id FOR UPDATE` locks **every mentor who covers the slot, in id order**. A fixed order means overlapping requests can't deadlock.
-4. Only then re-read bookings: anything committed before we got the lock is visible.
-5. Re-check eligibility (free at that time, under the cap for that shift), let the strategy rank, and insert.
+2. **Claim the `Idempotency-Key`** by inserting it with the request's fingerprint. A concurrent request with the same key waits on that row, then replays the first response, or gets 422 if the body differs.
+3. **Lock this parent + child** (`pg_advisory_xact_lock`), then refuse a second upcoming trial for the same child.
+4. Run the cheap checks: on the hour grid, inside a window, not too soon, not beyond the horizon.
+5. `SELECT id FROM mentors WHERE id = ANY($1) ORDER BY id FOR UPDATE` locks **every mentor who covers the slot, in id order**.
+6. Only then re-read bookings: anything committed before we got the lock is visible.
+7. Re-check eligibility (free at that time, under the cap for that shift), let the strategy rank, insert the booking, **write both emails to the outbox**, and store the response against the key.
+
+Locks are always taken in the same order (key, then parent/child, then mentors in id order), so concurrent bookings can't deadlock.
 
 Because the strategy runs on locked data, "try the next mentor" needs no retry loop: a mentor taken a moment ago is simply no longer eligible. The client gets a 409 only when *nobody* covering that time is free.
 
@@ -262,6 +282,10 @@ The unique index alone is not enough. Two parents booking **different** times wi
 |---|---|---|
 | X1 | 20 parents, one slot, 3 eligible mentors | Always exactly 3 × 201 on 3 different mentors, 17 × 409 `FULLY_BOOKED` |
 | X2 | 6 requests for 3 different slots that only one mentor (0 bookings) covers | Always exactly 2 × 201 and 4 × 409; the shift never exceeds 2 |
+| X3 | The same request twice with the same `Idempotency-Key` (double tap) | One booking; one 201 and one 200 replay with an identical body |
+| X5 | The same child booked into two different slots at once | One 201 and one 409 `DUPLICATE_TRIAL`; the child has exactly one trial |
+
+The gate count reached **2 of 2** for X3 and X5 as well.
 
 ### The experiment: removing `FOR UPDATE`
 
@@ -274,6 +298,23 @@ To show the lock is what makes this work, I temporarily removed `FOR UPDATE` fro
 | Both | **Zero 500s.** Every failure was a clean 409, which confirmed the backstop mapping under real contention. |
 
 With the lock restored, the integration suite passed 48 of 48 on three consecutive runs.
+
+### The same experiment for the duplicate-trial lock
+
+I ran the same experiment on the parent/child advisory lock: it was temporarily replaced with a no-op query, then restored from a backup and checked byte for byte.
+
+| Test | With the advisory lock | Without it |
+|---|---|---|
+| X5 gated | One trial, the other request gets `DUPLICATE_TRIAL` | `[201, 201]`: both passed the "no upcoming trial" check |
+| X5 ungated ×20 | Always one trial | Failed on the first run |
+| Database afterwards | — | **Maya with 2 upcoming trials (15:00 and 17:00)** |
+
+### The cost of alternatives
+
+Alternatives are computed on every 409, so they need to be cheap.
+- **First version:** an ungated X1 run (20 bursts of 20 requests) went from 2.2 s to **12.9 s**. Profiling showed `nearestAlternatives` re-validating the zone about 500 times per call (18.6 ms).
+- **Fix:** validate once, and scan the requested day plus the next before falling back to the full 14 days. That brought it to **1.1 ms** and the run back to 4.4 s.
+- **What's left** is the extra work each booking now does (key claim, parent lock, duplicate check), about 5 ms per request.
 
 ## API
 
@@ -318,13 +359,17 @@ Slots grouped by the parent's local date. `tz` is required (IANA). `from` and `t
 }
 ```
 
-`phone` is optional and must be E.164. The UI builds it from a country-code picker plus whatever the parent types, so "07700 900123" with +44 is sent as `+447700900123`. `childGrade` is 1–12. An `Idempotency-Key` header is sent by the UI and accepted; enforcing it is P1.
+Header **`Idempotency-Key: <uuid>`** is required. `phone` is optional and must be E.164. The UI builds it from a country-code picker plus whatever the parent types, so "07700 900123" with +44 is sent as `+447700900123`. `childGrade` is 1–12.
 
 | Status | Code | Body |
 |---|---|---|
-| **201** | — | The booking (below) |
-| **409** | `SLOT_UNAVAILABLE` | Envelope with `details.reason`, plus `alternatives` |
-| **422** | `VALIDATION_ERROR` | Envelope with per-field `details` (bad zone, off the hour grid, no mentor works then, beyond the horizon, bad email or grade or phone) |
+| **201** | — | The booking (below). Both confirmation emails are written in the same transaction. |
+| **200** | — | Replay: same key, same body as an earlier success. Identical booking, header `Idempotent-Replayed: true`, nothing new written. |
+| **409** | `SLOT_UNAVAILABLE` | Envelope with `details.reason`, plus up to 5 `alternatives` |
+| **409** | `DUPLICATE_TRIAL` | Envelope plus `existingBooking` (this child's upcoming trial) |
+| **422** | `VALIDATION_ERROR` | Envelope with per-field `details` (bad zone, off the hour grid, no mentor works then, beyond the horizon, bad email or grade or phone, malformed key) |
+| **422** | `IDEMPOTENCY_KEY_REUSED` | The key was already used for a different body |
+| **400** | `IDEMPOTENCY_KEY_MISSING` | No `Idempotency-Key` header |
 | **400** | `INVALID_JSON` | Malformed body |
 | **503** | `TRY_AGAIN` | A lock or statement timeout fired; `Retry-After: 1` |
 
@@ -339,7 +384,8 @@ Slots grouped by the parent's local date. `tz` is required (IANA). `from` and `t
   "parent": { "name": "Ashley Johnson", "email": "ashley@example.com" },
   "child": { "name": "Mason", "grade": 5 },
   "mentor": { "id": "00000000-0000-4000-8000-000000000004", "name": "Arjun Sharma", "timezone": "Asia/Kolkata" },
-  "classLink": "https://class.example.com/trial/d9977ba6-89a6-4d29-bfa1-1be4684334e5"
+  "classLink": "https://class.example.com/trial/d9977ba6-89a6-4d29-bfa1-1be4684334e5",
+  "icsUrl": "/api/bookings/d9977ba6-89a6-4d29-bfa1-1be4684334e5/calendar.ics"
 }
 ```
 
@@ -349,20 +395,42 @@ Slots grouped by the parent's local date. `tz` is required (IANA). `from` and `t
 {
   "error": {
     "code": "SLOT_UNAVAILABLE",
-    "message": "Sorry, that time has just been taken.",
-    "details": { "reason": "FULLY_BOOKED" }
+    "message": "Our mentors have reached their class limit for that day.",
+    "details": { "reason": "DAILY_LIMIT_REACHED" }
   },
-  "alternatives": []
+  "alternatives": [
+    { "startUtc": "2026-11-14T03:00:00Z", "endUtc": "2026-11-14T04:00:00Z" },
+    { "startUtc": "2026-11-14T02:00:00Z", "endUtc": "2026-11-14T03:00:00Z" },
+    { "startUtc": "2026-11-14T08:00:00Z", "endUtc": "2026-11-14T09:00:00Z" },
+    { "startUtc": "2026-11-14T01:00:00Z", "endUtc": "2026-11-14T02:00:00Z" },
+    { "startUtc": "2026-11-14T09:00:00Z", "endUtc": "2026-11-14T10:00:00Z" }
+  ]
 }
 ```
 
-`alternatives` is always present. It's empty in P0; P1 fills it with up to 5 open slots (same parent-local day by closeness first, then the following days), each `{ startUtc, endUtc }`.
+`alternatives` is always present (possibly empty). It holds up to 5 open slots: the same **parent-local** day first, closest in time (the earlier wins a tie), then the following days in order. Earlier days are never offered. They're computed after the failed transaction rolls back, so they already exclude the booking that just won.
+
+**409 `DUPLICATE_TRIAL` body:**
+
+```json
+{
+  "error": { "code": "DUPLICATE_TRIAL", "message": "Mason already has a trial class booked." },
+  "existingBooking": {
+    "id": "37448bc6-eb12-4be0-976b-22cdd1d34017",
+    "startUtc": "2026-11-12T23:00:00Z",
+    "endUtc": "2026-11-13T00:00:00Z",
+    "childName": "Mason"
+  }
+}
+```
 
 ### Other endpoints
 
 | Endpoint | Response |
 |---|---|
 | `GET /api/bookings/:id` | 200 booking · 404 `NOT_FOUND` · 422 if `id` isn't a UUID |
+| `GET /api/bookings/:id/calendar.ics` | 200 `text/calendar` attachment (`trial-class.ics`): UTC times, the class link, a 15-minute reminder · 404 |
+| `GET /api/outbox?bookingId=&limit=` | 200 `{ entries: [...] }`, newest booking first (default 50, max 100). Each entry has `bookingId`, `startUtc`, `childName`, `mentorName`, `parentTimezone`, `mentorTimezone`, `sentAt`, and a `parent` and a `mentor` email (`to`, `subject`, `body`). |
 | `GET /api/health` | 200 `{ "status": "ok" }` · 503 if the database is unreachable |
 | Any unknown route | 404 `NOT_FOUND` envelope |
 
@@ -375,32 +443,35 @@ Slots grouped by the parent's local date. `tz` is required (IANA). `from` and `t
   - Screen readers get the reason through `aria-describedby`.
 - **Zone:** detected from the browser and changeable. If detection fails, the parent is asked before any times are shown.
 - **Phone:** the country code defaults from the zone (London → +44, New York → +1), so local formats are accepted.
+- **Slot taken while filling the form:**
+  - the form stays and keeps everything typed;
+  - a panel explains what happened and lists the nearest times;
+  - choosing one selects it, then "Book Sat 14 Nov, 4:00 PM London time (GMT+0)" confirms it.
+- **Same child booked twice:** "Oliver already has a trial on …" with a link to that booking, and a hint to change the name if it's a sibling.
 - **Confirmation:**
   - shows the parent's time, the mentor's name and a copyable class link. It deliberately doesn't show the mentor's India time ("2:30 AM for your mentor" only worries parents);
+  - "Add to calendar (.ics)" and "We've emailed the details to …";
+  - a link straight to that booking's two emails in the outbox;
   - device guidance: a laptop or desktop with a camera and microphone, Chrome recommended;
   - "Book a class for another child" keeps the parent's details.
+- **Outbox (`/outbox`, also linked in the header):** shows how the brief's "the mentor receives the same information in their local time" works. Each booking shows its two emails side by side, each headed by the class time in that reader's zone; the mentor's also shows the parent's time.
 - **Accessibility:** real buttons and labels, a visible focus ring, 44 px tap targets, WCAG AA contrast, an error summary that links to fields, and reduced-motion support.
 
 ## Out of scope, and what I'd do next
 
-**Out of scope by design:** authentication, real email (a mock outbox is planned), payments, rescheduling and cancellation UI, an admin UI, real video, mentor holidays and one-off exceptions, waitlists, i18n.
+**Out of scope by design:** authentication, real email delivery (emails go to a mock outbox), payments, rescheduling and cancellation UI, an admin UI, real video, mentor holidays and one-off exceptions, waitlists, i18n.
 
 **Next, in priority order:**
-1. **P1:**
-   - nearest-alternatives list in the 409 and the one-click rebook;
-   - duplicate-trial check (same email + child);
-   - idempotency enforcement;
-   - outbox writes and the outbox page (parent email in the parent's zone, mentor email in India time);
-   - `.ics` download.
-2. **P2:** mentor page (their bookings in India time, plus the parent's time), a Playwright happy path, dark mode, and code-splitting the 136 kB (gzipped) bundle.
-3. **Before real traffic:**
+1. **P2:** mentor page (their bookings in India time, plus the parent's time), a Playwright happy path, dark mode, and code-splitting the bundle (about 136 kB gzipped).
+2. **Before real traffic:**
+   - an email worker that sends `outbox_messages` and marks them sent;
    - auth for mentor and admin views;
    - rate limiting on `POST /api/bookings`;
    - structured logging and metrics (409 rate, lock waits);
-   - a scheduled job to expire idempotency keys;
+   - a scheduled job to expire idempotency keys (e.g. after 24 hours);
    - mentor holidays and exceptions;
    - an "effective from" date on windows, so schedule changes don't rewrite history.
-4. **At larger scale:** short-lived slot holds while the form is open, and assignment that considers forecast demand per hour instead of a greedy score.
+3. **At larger scale:** short-lived slot holds while the form is open, and assignment that considers forecast demand per hour instead of a greedy score.
 
 ## How I used AI
 
@@ -419,8 +490,9 @@ I built this with Claude Code, following a spec-first, slice-by-slice workflow. 
    - never change a test's expected value to make it pass;
    - small commits.
 4. **One slice at a time.** After each slice the AI stopped and reported what it built, any decision not in the spec, and the test output. I reviewed before saying "continue". Several real issues surfaced this way: EST → Panama, the `pg` date parsing, integration test files secretly running in parallel, and a screen-reader naming bug.
-5. **Proof, not just green tests.** For the core booking transaction I asked for evidence: the gated test showing all sessions in flight at once, and the experiment of removing `FOR UPDATE` to watch the cap break.
+5. **Proof, not just green tests.** For the core booking transaction I asked for evidence: the gated test showing all sessions in flight at once, and experiments that remove `FOR UPDATE` (the cap breaks) and the advisory lock (a child gets two trials). When adding alternatives made the race tests 6× slower, the slowdown was profiled and fixed rather than accepted.
 6. **Review in the browser.** I checked the UI myself at phone width and fed back concrete fixes:
    - remove the mentor's India time from the parent page;
+   - make alternatives select-then-confirm instead of booking on one tap, since bookings can't be cancelled;
    - device guidance matching Codeyoung's own;
    - select chevrons, a required grade, autocomplete attributes.

@@ -6,7 +6,10 @@ import { ApiError, api } from '../../api/client.js';
 import { BookingForm } from './BookingForm.js';
 import { slot } from '../../testFixtures.js';
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 const LONDON = 'Europe/London';
 const theSlot = slot('2026-11-13T16:00:00Z');
@@ -278,5 +281,36 @@ describe('BookingForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
     await waitFor(() => expect(create).toHaveBeenCalledTimes(2));
     expect(create.mock.calls[1]![1]).not.toBe(create.mock.calls[0]![1]);
+  });
+
+  it('still books on plain http (no crypto.randomUUID), e.g. a phone on http://192.168.x.x', async () => {
+    const real = globalThis.crypto;
+    vi.stubGlobal('crypto', { getRandomValues: real.getRandomValues.bind(real) });
+    expect(typeof globalThis.crypto.randomUUID).toBe('undefined');
+    const create = vi.spyOn(api, 'createBooking').mockResolvedValue(booking);
+    const props = renderForm();
+    fillValid();
+    fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
+    await waitFor(() => expect(props.onBooked).toHaveBeenCalledWith(booking));
+    expect(create.mock.calls[0]![1]).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+  });
+
+  it('an unexpected exception shows the generic error with a retry, never a silent failure', async () => {
+    vi.spyOn(api, 'createBooking')
+      .mockRejectedValueOnce(new TypeError('something unexpected'))
+      .mockResolvedValueOnce(booking);
+    const props = renderForm();
+    fillValid();
+    fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
+    expect(
+      await screen.findByText('Something went wrong on our side. Please try again.'),
+    ).toBeTruthy();
+    expect(
+      (screen.getByRole('button', { name: 'Book free class' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(props.onBooked).toHaveBeenCalled());
   });
 });

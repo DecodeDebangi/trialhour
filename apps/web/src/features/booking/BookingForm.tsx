@@ -12,6 +12,7 @@ import {
 import { ApiError, api, type Alternative, type ExistingTrial } from '../../api/client.js';
 import { copy } from '../../copy.js';
 import { DIAL_CODES, dialCodeForZone, toE164 } from '../../lib/phone.js';
+import { newUuid } from '../../lib/uuid.js';
 import { Notice } from '../../components/Notice.js';
 import styles from './BookingForm.module.css';
 
@@ -82,7 +83,7 @@ export function BookingForm({
   function keyFor(request: BookingRequest): string {
     const payload = JSON.stringify(request);
     if (lastAttempt.current?.payload !== payload) {
-      lastAttempt.current = { payload, key: crypto.randomUUID() };
+      lastAttempt.current = { payload, key: newUuid() };
     }
     return lastAttempt.current.key;
   }
@@ -143,7 +144,11 @@ export function BookingForm({
     try {
       onBooked(await api.createBooking(request, keyFor(request)));
     } catch (error) {
-      if (!(error instanceof ApiError)) throw error;
+      if (!(error instanceof ApiError)) {
+        // Never fail silently: anything unexpected still tells the parent and offers a retry.
+        setFormError(copy.serverError);
+        return;
+      }
       if (error.kind === 'unavailable' && error.alternatives.length > 0) {
         setConflict({ title: conflictTitle(error, startUtc), alternatives: error.alternatives });
         setChosenAlternative(null);

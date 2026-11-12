@@ -23,7 +23,7 @@ describe('nearestAlternatives (C10)', () => {
     slot('2026-11-13T22:00:00Z', 'FULLY_BOOKED'), // the requested slot itself
     slot('2026-11-13T23:00:00Z'), // Fri 6 PM (+1h): ties with 4 PM, earlier wins
     slot('2026-11-14T01:00:00Z', 'DAILY_LIMIT_REACHED'), // Fri 8 PM, unavailable
-    slot('2026-11-14T02:00:00Z'), // Fri 9 PM (+4h): late-night (ends 10 PM), so only after daytime
+    slot('2026-11-14T02:00:00Z'), // Fri 9 PM (+4h): the last daytime start
     slot('2026-11-14T20:00:00Z'), // Sat 3 PM
     slot('2026-11-15T20:00:00Z'), // Sun 3 PM
     slot('2026-11-16T20:00:00Z'), // Mon 3 PM
@@ -34,8 +34,8 @@ describe('nearestAlternatives (C10)', () => {
       '2026-11-13T21:00:00.000Z', // Fri 4 PM
       '2026-11-13T23:00:00.000Z', // Fri 6 PM
       '2026-11-13T19:00:00.000Z', // Fri 2 PM
+      '2026-11-14T02:00:00.000Z', // Fri 9 PM: still daytime (ends 10 PM)
       '2026-11-14T20:00:00.000Z', // Sat 3 PM
-      '2026-11-15T20:00:00.000Z', // Sun 3 PM (Fri 9 PM is late-night, so it's left out)
     ]);
   });
 
@@ -43,14 +43,14 @@ describe('nearestAlternatives (C10)', () => {
     const fewDaytime = [
       slot('2026-11-13T11:00:00Z'), // Fri 6 AM: early morning
       slot('2026-11-13T21:00:00Z'), // Fri 4 PM
-      slot('2026-11-14T02:00:00Z'), // Fri 9 PM: late night
+      slot('2026-11-14T03:00:00Z'), // Fri 10 PM: late night
       slot('2026-11-14T05:00:00Z'), // Sat 12 AM: night
     ];
     expect(starts(nearestAlternatives(fewDaytime, request, NY))).toEqual([
-      '2026-11-13T21:00:00.000Z',
-      '2026-11-14T02:00:00.000Z',
-      '2026-11-13T11:00:00.000Z',
-      '2026-11-14T05:00:00.000Z',
+      '2026-11-13T21:00:00.000Z', // daytime
+      '2026-11-14T03:00:00.000Z', // night: Fri 10 PM, 5h away
+      '2026-11-13T11:00:00.000Z', // night: Fri 6 AM, 11h away
+      '2026-11-14T05:00:00.000Z', // night: Sat 12 AM, next day
     ]);
   });
 

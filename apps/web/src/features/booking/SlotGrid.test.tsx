@@ -190,7 +190,7 @@ describe('SlotGrid', () => {
       });
       expect(toggle.getAttribute('aria-pressed')).toBe('false');
       expect(
-        screen.getByText('Times between 7:00 AM and 9:00 PM in your time zone are shown first.'),
+        screen.getByText('Times between 7:00 AM and 10:00 PM in your time zone are shown first.'),
       ).toBeTruthy();
       fireEvent.click(toggle);
       expect(onToggle).toHaveBeenCalledTimes(1);

@@ -55,7 +55,7 @@ export function BookPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [focusStart, setFocusStart] = useState<string | null>(null);
   const [formInView, setFormInView] = useState(false);
-  // Early-morning and late-night times (outside 7 AM–9 PM for the parent) are opt-in.
+  // Early-morning and late-night times (outside 7 AM–10 PM for the parent) are opt-in.
   const [showNight, setShowNight] = useState(false);
   const timesHeadingRef = useRef<HTMLHeadingElement>(null);
 

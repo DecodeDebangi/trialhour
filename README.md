@@ -202,7 +202,7 @@ MongoDB can do multi-document transactions, but it needs a replica set even loca
 | — | **No temporary slot holds (no Redis).** | At ~20 bookings/day, a parent losing a slot while filling in the form is rare. It's handled with a friendly 409 and a refreshed list rather than hold/expiry machinery. |
 | — | **No ORM; one Dockerfile; `vite preview` serves the web build.** | Fewer moving parts. The locking SQL is visible, and there's no nginx config to maintain. |
 | — | **A start time already in the past is "too soon" (409), not invalid (422).** | It almost always means the parent left the form open; alternatives help more than a validation error. |
-| — | **Night times are hidden by default, not removed.** | 7:00 AM–9:00 PM local covers after-school and weekend times for every market we serve, while a parent who really wants 6 AM can still see it. Mentor availability is unchanged; this is purely what's shown first. |
+| — | **Night times are hidden by default, not removed.** | 7:00 AM–10:00 PM local (last start 9:00 PM, which suits older students) covers after-school and weekend times for every market we serve, while a parent who really wants 6 AM can still see it. Mentor availability is unchanged; this is purely what's shown first. |
 | — | **Parent-facing reasons describe the time, not the rule.** | "No mentor is free at 4:00 PM on Sat 14 Nov" rather than "our mentors reached their daily limit", which wrongly suggests the whole day is full. The precise reason stays in the API for clients and logs. |
 | — | **Choosing an alternative takes two taps: select, then confirm.** | Parents can't cancel or reschedule, so a mis-tap (tomorrow instead of today) would leave them stuck. |
 | — | **A failed attempt doesn't use up its Idempotency-Key.** | The key's row rolls back with the failed transaction, so a retry after a 409 or a timeout runs fresh. Only a successful booking's response is replayed. Keys don't expire yet (see next steps). |
@@ -414,7 +414,7 @@ Header **`Idempotency-Key: <uuid>`** is required. `phone` is optional and must b
 }
 ```
 
-`alternatives` is always present (possibly empty). It holds up to 5 open slots: the same **parent-local** day first, closest in time (the earlier wins a tie), then the following days in order. Earlier days are never offered. If the requested time was daytime for the parent (7:00 AM–9:00 PM in their zone), daytime alternatives come first and early-morning or late-night ones only fill any remaining places. They're computed after the failed transaction rolls back, so they already exclude the booking that just won.
+`alternatives` is always present (possibly empty). It holds up to 5 open slots: the same **parent-local** day first, closest in time (the earlier wins a tie), then the following days in order. Earlier days are never offered. If the requested time was daytime for the parent (a class that fits between 7:00 AM and 10:00 PM in their zone, so 9:00 PM is the last daytime start), daytime alternatives come first and early-morning or late-night ones only fill any remaining places. They're computed after the failed transaction rolls back, so they already exclude the booking that just won.
 
 **409 `DUPLICATE_TRIAL` body:**
 
@@ -448,7 +448,7 @@ Header **`Idempotency-Key: <uuid>`** is required. `phone` is optional and must b
   - Unavailable times always show a short label ("Booked" or "Too soon"). Tapping one opens the full reason inline, e.g. "No mentor is free at 4:00 PM on Sat 14 Nov. Please pick another time.", with a "Next open time" button; nothing depends on hover.
   - Reasons are always about **that time**, never about the day or internal rules. A time where every covering mentor has hit their daily cap reads exactly like a booked one, because other times that day may well be open. The API still distinguishes them in `details.reason`.
   - Screen readers get the reason through `aria-describedby`.
-- **Daytime first:** the grid shows only times between **7:00 AM and 9:00 PM in the parent's own zone** by default, because no one books a young child's class at 2 AM. Those other slots exist only because Indian mentors' shifts for the US and Australia land at night in London, and vice versa.
+- **Daytime first:** the grid shows only classes that fit between **7:00 AM and 10:00 PM in the parent's own zone** (the last start is 9:00 PM, fine for older students) by default, because no one books a young child's class at 2 AM. Those other slots exist only because Indian mentors' shifts for the US and Australia land at night in London, and vice versa.
   - A toggle under the grid ("Show early-morning and late-night times (N)") reveals them, and the date strip's counts follow what's visible, so a day with only night slots says "No daytime times" rather than "5 open".
   - 409 alternatives prefer daytime too.
   - The hours are defined once, in [`daytime.ts`](packages/shared/src/time/daytime.ts), and shared by the web app and the API.

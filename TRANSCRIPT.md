@@ -1,3 +1,5 @@
+   # AI Development Transcript
+   Tool: Claude Code (Claude Opus 5.5). Background research was done separately with Claude; the findings are in my first prompt.
 
 ❯ I'm building a take-home assignment for a Senior Full Stack Engineer role at
   Codeyoung (live 1:1 coding classes for kids; parents mostly in
@@ -927,9 +929,6 @@
       50      "node_modules/@codeyoung/api": {
       51        "resolved": "apps/api",
       52        "link": true
-  ⎿  (files that changed while this command ran, by the command or by
-     another process; a convenience view, not a review or audit of the
-     command)
 
   Ran 1 shell command (ctrl+o to expand)
 
@@ -13358,3 +13357,1820 @@ typecheck, test" completed (exit code 0)
   Before you submit: add TRANSCRIPT.md and the screenshots, then push. The repo
   still has no remote, and TRANSCRIPT.md is the only README link that doesn't
   resolve yet. Good luck with the submission.
+
+❯ Search yourself an update on README, and inside docs/screenshots folder?
+
+  Ran 1 shell command (ctrl+o to expand)
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ can you take screenshots yourself an update on README, and inside
+  docs/screenshots folder?
+
+⏺ I'll screenshot the five app states myself via headless Chrome, using a
+  throwaway script outside the repo, and I'm checking whether Chrome is
+  installed first. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Chrome 157 and Node's WebSocket are both available, and the stack is up. I'll
+  restart the API container first so the demo data is freshly seeded (it reseeds
+  on start), then write the script:
+
+  Made 1 scratchpad edit +192, ran 1 shell command (ctrl+o to expand)
+
+⏺ The script is written. I'll run it into a scratch folder first, so I can check
+  each image before anything goes into docs/screenshots:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Shots 1 and 2 are saved, but shot 3 timed out because my test parent is
+  already a seeded booking, so I'm switching to a parent who isn't in the seed
+  and first reviewing the two shots. · summary
+
+  Read 2 files (ctrl+o to expand)
+
+⏺ Both checks look right: booking shows London time and the reason-on-tap
+  wording with a "Next open time" button. I'm fixing shot 3's parent and
+  reseeding the bookings before rerunning everything. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ The script hit a race: it clicked the Friday "Booked" slot before the Saturday
+  grid had rendered, so the day change closed the panel. I'm updating it to
+  wait until the date header shows the new day. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ All five were captured, 114–395 kB each. Checking the three new ones visually
+  before they go into the repo:
+
+  Read 3 files (ctrl+o to expand)
+
+⏺ All five screenshots render correctly, and the outbox shows the class at 1:00
+  AM London and 6:30 AM India. Shots 3 to 5 will be re-taken on Sunday at 4:00
+  PM London, since the current 12:00 AM and 1:00 AM slots look odd for a London
+  parent. · summary
+
+  Read 2 files, ran 1 shell command (ctrl+o to expand)
+
+⏺ I've got the two screenshots I wanted, Shot 3 with the 3 PM fallback and Shot
+  5 with the parent and Ananya times. Next I'm copying the five into
+  docs/screenshots/ and swapping the README placeholders. · summary
+
+⏺ Bash(SCR=/private/tmp/claude-501/-Users-debangichoudhury-Projects-assignment-c
+      odeyoung/73160ce7-afbb-433b-a791-7345507b6d3e/scratchpad/shots && cp
+      $SCR/out/*.png doc…)
+  ⎿  5 files changed (binary, mode only or too large to show)
+
+⏺ Update(README.md)
+  ⎿  Added 6 lines, removed 4 lines
+      14    - `.ics` download.
+      15  - **P2** (mentor page, Playwright happy path) is listed under [
+          What I'd do next](#out-of-scope-and-what-id-do-next).
+      16  
+      17 -| Booking (phone) | Unavailable slot reason | Slot just taken →
+         - alternatives |                                                
+      17 +| Booking on a phone | A greyed-out time, tapped | Slot taken w
+         +hile filling the form → alternatives |                         
+      18  |---|---|---|
+      19 -| _screenshot placeholder_ | _screenshot placeholder_ | _screen
+         -shot placeholder_ |                                            
+      19 +| <img src="docs/screenshots/01-booking-phone.png" alt="Booking
+         + page on a phone: zone bar showing London time (GMT+0), a date 
+         +strip with open counts per day, and the time grid" width="240">
+         + | <img src="docs/screenshots/02-slot-reason-phone.png" alt="A 
+         +booked time tapped: 'No mentor is free at 5:00 AM on Sat 14 Nov
+         +. Please pick another time.' with a 'Next open time' button" wi
+         +dth="240"> | <img src="docs/screenshots/03-alternatives-phone.p
+         +ng" alt="409 panel: 'No mentor is free at Sun 15 Nov, 4:00 PM L
+         +ondon time (GMT+0) anymore.' with five alternatives, one select
+         +ed, and a confirm button" width="240"> |                       
+      20  
+      21 -| Confirmation | Outbox: parent and mentor emails side by side 
+         -|                                                              
+      21 +| Confirmation | Outbox: the same class in each reader's own ti
+         +me |                                                           
+      22  |---|---|
+      23 -| _screenshot placeholder_ | _screenshot placeholder_ |        
+      23 +| <img src="docs/screenshots/04-confirmation-phone.png" alt="Co
+         +nfirmation page: when, mentor name, class link with Copy, Add t
+         +o calendar, and 'We've emailed the details'" width="240"> | <im
+         +g src="docs/screenshots/05-outbox-desktop.png" alt="Outbox: par
+         +ent email at Sun 15 Nov, 3:00 PM London time next to the mentor
+         + email at 8:30 PM India time with the parent's time underneath"
+         + width="520"> |                                                
+      24  
+      25 +<sub>Taken with headless Chrome against `docker compose up`: ph
+         +one shots at 390×844, the outbox at 1280×900, browser time zone
+         + Europe/London.</sub>                                          
+      26 +                                                               
+      27  ---
+      28  
+      29  ## Contents
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ The edit tool warned that README had changed on disk since I last read it.
+  Before this step git status showed README clean, but I'll confirm the commit
+  contains only my screenshot change:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ I took the five screenshots myself with headless Chrome against the running
+  Docker stack, saved them in docs/screenshots/, and replaced the README
+  placeholders. Committed as 0fac636; the commit changes only the screenshot
+  tables in the README, plus the five images.
+
+  ┌───────────────────────────┬──────────────────────────────────────────────┐
+  │           File            │                What it shows                 │
+  ├───────────────────────────┼──────────────────────────────────────────────┤
+  │                           │ The booking page on a phone, with the zone   │
+  │ 01-booking-phone.png      │ detected as London time (GMT+0) and each day │
+  │                           │  saying how many times are open              │
+  ├───────────────────────────┼──────────────────────────────────────────────┤
+  │                           │ A booked time, tapped: "No mentor is free at │
+  │ 02-slot-reason-phone.png  │  5:00 AM on Sat 14 Nov." with a "Next open   │
+  │                           │ time" button                                 │
+  ├───────────────────────────┼──────────────────────────────────────────────┤
+  │                           │ A real 409 panel with the full date, time    │
+  │ 03-alternatives-phone.png │ and zone, five alternatives (one selected)   │
+  │                           │ and the confirm button                       │
+  ├───────────────────────────┼──────────────────────────────────────────────┤
+  │                           │ The confirmation page: mentor name, Copy     │
+  │ 04-confirmation-phone.png │ link, Add to calendar, "We've emailed the    │
+  │                           │ details"                                     │
+  ├───────────────────────────┼──────────────────────────────────────────────┤
+  │ 05-outbox-desktop.png     │ The same class side by side: 3:00 PM London  │
+  │                           │ for the parent, 8:30 PM India for the mentor │
+  └───────────────────────────┴──────────────────────────────────────────────┘
+
+  - How they were taken: phone viewport 390×844 with the browser's time zone set
+    to London, so the app detected a UK parent the way a real phone would. The
+    outbox shot is at 1280×900. All are 2× resolution, 114–397 kB each.
+  - README layout: the images sit in the existing tables at a fixed display
+    width, each with descriptive alt text, and a one-line note under them says
+    how they were taken.
+  - Real race in shot 3: I filled in the form, had another "parent" book every
+    mentor at that time through the API, then pressed "Book free class".
+  - Retakes: my first attempt landed on Saturday's 12:00–1:00 AM slots.
+    Accurate, but an odd showcase for a London parent, so I re-took shots 3–5 on
+    Sunday at 4 PM London.
+  - Demo data: the stack reseeded several times while I took these, so it now
+    holds fresh demo data plus the screenshot bookings. The driver script stays
+    in my scratchpad; nothing was added to the project.
+
+  Left for you: your TRANSCRIPT.md is still untracked; I didn't touch it. Commit
+  it, then push to GitHub; the repo still has no remote.
+
+❯ The third picture, which is the alternative phone.png, there is a button for
+  book Sunday 15 November 3 PM London time. That button has no padding for the
+  text, and the text is sticking to the corners of the button. Please check
+  this. The other screenshots look fine. Thank you.
+
+⏺ Good catch: that confirm button reuses the main submit button's style, which
+  has no horizontal padding and a fully round pill shape. That's fine for "Book
+  free class" on one line, but when the longer "Book Sun 15 Nov, 3:00 PM London
+  time (GMT+0)" wraps to two lines, the text runs into the curved ends. I'll
+  give the confirm button its own style, then retake the screenshot.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ The submit button needs more padding, and the confirm button in the 409 panel
+  needs a rounded-rectangle style so its two lines of text fit. · summary
+
+⏺ Bash(python3 - <<'EOF'
+      def rep(p,a,b):…)
+  ⎿  Updated apps/web/src/features/booking/BookingForm.module.css (+9 -0)
+      161  
+      162  .submit {
+      163    min-height: 52px;
+      164 +  padding: var(--space-3) var(--space-5);                     
+      165    border: none;
+      166    border-radius: var(--radius-pill);
+      167    background: var(--primary);
+     ...
+      175    background: var(--primary-hover);
+      176  }
+      177  
+      178 +/* The confirm button carries a full date, time and zone, so i
+          +t often wraps to two lines:                                   
+      179 +   a rounded rectangle keeps wrapped text clear of the edges, 
+          +where a pill would crowd it. */                               
+      180 +.confirm {                                                    
+      181 +  border-radius: var(--radius);                               
+      182 +  line-height: 1.35;                                          
+      183 +  text-wrap: balance;                                         
+      184 +}                                                             
+      185 +                                                              
+      186  .submit[aria-busy='true'] {
+      187    opacity: 0.8;
+      188    cursor: progress;
+  ⎿  Updated apps/web/src/features/booking/BookingForm.tsx (+1 -1)
+      362              {chosenAlternative && (
+      363                <button
+      364                  type="button"
+      365 -                className={styles.submit}                     
+      365 +                className={`${styles.submit} ${styles.confirm}
+          +`}                                                            
+      366                  aria-busy={submitting}
+      367                  disabled={submitting}
+      368                  onClick={() => void submit(undefined, chosenAl
+           ternative)}
+  ⎿  (timeout 5m)
+
+⏺ Typecheck is clean and all 64 web tests pass. Now rebuilding the stack so the
+  web container serves the new CSS, reseeding, and re-running the same capture
+  script:
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+⏺ The padding is fixed, but text-wrap: balance now splits "3:00 PM" across two
+  lines. I'll add a non-breaking space before AM/PM so the time stays together.
+  · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Bash(python3 - <<'EOF'
+      def rep(p,a,b):…)
+  ⎿  Updated apps/web/src/copy.ts (+2 -1)
+      64      `${copy.conflictTitle(reason, when)} We've refreshed the ti
+          mes; please pick another.`,
+      65    conflictLead:
+      66      "Here are the nearest open times. Choose one, then confirm 
+          to book it with the details you've entered.",
+      67 -  bookThis: (when: string) => `Book ${when}`,                  
+      67 +  /** Label of the confirm button. A no-break space keeps "3:00
+         + PM" together when it wraps. */                                
+      68 +  bookThis: (when: string) => `Book ${when.replace(/ (AM|PM)\b/
+         +, '\u00a0$1')}`,                                               
+      69    pickAnother: 'Or pick another time',
+      70    duplicateTrial: (child: string, when: string) => `${child} al
+          ready has a trial on ${when}.`,
+      71    viewThatBooking: 'View that booking',
+  ⎿  Updated apps/web/src/features/booking/BookingForm.test.tsx (+6 -3)
+      221      expect(create).toHaveBeenCalledTimes(1);
+      222      fireEvent.click(options[0]!);
+      223  
+      224 -    fireEvent.click(                                          
+      225 -      screen.getByRole('button', { name: 'Book Fri 13 Nov, 5:0
+          -0 PM London time (GMT+0)' }),                                 
+      226 -    );                                                        
+      224 +    const confirm = screen.getByRole('button', {              
+      225 +      name: 'Book Fri 13 Nov, 5:00 PM London time (GMT+0)',   
+      226 +    });                                                       
+      227 +    // "5:00 PM" never splits across lines when the label wrap
+          +s on a phone.                                                 
+      228 +    expect(confirm.textContent).toContain('5:00\u00a0PM');    
+      229 +    fireEvent.click(confirm);                                 
+      230      await waitFor(() => expect(props.onBooked).toHaveBeenCalle
+           d());
+      231      const [firstCall, secondCall] = create.mock.calls;
+      232      expect(secondCall![0]).toEqual({ ...firstCall![0], startUt
+           c: '2026-11-13T17:00:00Z' });
+  ⎿  (timeout 5m)
+
+⏺ The test's lookup is the problem, not the UI: the no-break space in "5:00 PM"
+  no longer matches the plain-space pattern. I'm updating both lookups to accept
+  any whitespace. · summary
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+⏺ Bash(python3 - <<'EOF'
+      p='apps/web/src/features/booking/BookingForm.test.tsx'; s=open(p).read()…)
+  ⎿  Updated apps/web/src/features/booking/BookingForm.test.tsx (+2 -2)
+      213      fireEvent.click(options[0]!);
+      214      expect(options[0]!.getAttribute('aria-pressed')).toBe('tru
+           e');
+      215      expect(create).toHaveBeenCalledTimes(1);
+      216 -    expect(screen.queryByRole('button', { name: /^Book Fri 13 
+          -Nov, 5:00 PM/ })).toBeTruthy();                               
+      216 +    expect(screen.queryByRole('button', { name: /^Book Fri 13 
+          +Nov, 5:00\sPM/ })).toBeTruthy();                              
+      217  
+      218      // Changing your mind moves the selection and the confirm 
+           button.
+      219      fireEvent.click(options[2]!);
+     ...
+      222      fireEvent.click(options[0]!);
+      223  
+      224      const confirm = screen.getByRole('button', {
+      225 -      name: 'Book Fri 13 Nov, 5:00 PM London time (GMT+0)',   
+      225 +      name: /^Book Fri 13 Nov, 5:00\sPM London time \(GMT\+0\)
+          +$/,                                                           
+      226      });
+      227      // "5:00 PM" never splits across lines when the label wrap
+           s on a phone.
+      228      expect(confirm.textContent).toContain('5:00\u00a0PM');
+  ⎿  (timeout 5m)
+
+⏺ All 64 pass. Rebuilding, reseeding and retaking the screenshots so I can look
+  at the button again:
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+⏺ The button now reads "Book Sun 15 Nov, 3:00 PM / London time (GMT+0)" with
+  balanced lines and proper padding. Since the re-run recreated the same
+  booking, I'm replacing all five screenshots and committing the fix and the
+  refreshed images separately. · summary
+
+⏺ Bash(SCR=/private/tmp/claude-501/-Users-debangichoudhury-Projects-assignment-c
+      odeyoung/73160ce7-afbb-433b-a791-7345507b6d3e/scratchpad/shots && cp
+      $SCR/out/*.png doc…)
+  ⎿  3 files changed (binary, mode only or too large to show)
+  ⎿  (timeout 5m)
+
+⏺ The confirm button in the third screenshot is fixed. Its text has proper
+  padding inside a rounded rectangle, and it wraps as "Book Sun 15 Nov, 3:00 PM
+  / London time (GMT+0)". All 306 tests pass.
+
+  - Cause: the confirm button reused the main "Book free class" style, which had
+    no horizontal padding and a fully round pill shape. That's fine on one
+    line, but the longer label wraps to two lines, and the text ran into the
+    curved ends.
+  - Fix:
+    - all submit buttons now have padding;
+    - the confirm button has its own style: a 12 px-radius rounded rectangle
+      with balanced line wrapping;
+    - its label uses a no-break space before AM/PM. My first retake showed
+      balanced wrapping splitting "3:00 / PM" across the two lines; with the
+      no-break space it breaks between the time and the zone instead.
+  - Test: a new assertion checks the label keeps "5:00 PM" together. Two test
+    lookups now accept any whitespace, because Testing Library compares
+    accessible names exactly; screen readers read the no-break space as a normal
+    space.
+  - Screenshots: I rebuilt the stack, retook all five and checked the third one
+    visually. All five are refreshed so shots 3–5 still show the same booking.
+  - Commits: 112f9c2 is the code fix, 31b420c the refreshed screenshots.
+
+  Your TRANSCRIPT.md is still untracked; it's ready for you to add before you
+  push.
+
+❯ If the button is fixed, why didn't you update the image? Screenshot.
+
+⏺ I did copy and commit it, but rather than just say so, I'll check the actual
+  file in the repo: compare it with the fresh capture and with what's committed,
+  then look at it.
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+⏺ The image on disk is the fixed one. I just opened
+  docs/screenshots/03-alternatives-phone.png straight from the repo, and the
+  button reads "Book Sun 15 Nov, 3:00 PM / London time (GMT+0)" with proper
+  padding, as shown above.
+
+  - The file: it's byte-identical to my fresh capture (same SHA-1, 75d55ff…) and
+    was modified at 01:57.
+  - The commit: it's committed in 31b420c ("Refresh screenshots…"). The earlier,
+    broken version (8b84a69…) is only in the older commit 0fac636.
+
+  So you're most likely looking at a cached copy. VS Code's image viewer and
+  Markdown preview keep the old image even after the file changes on disk. To
+  see the new one:
+  - close the image tab or README preview and reopen it; or
+  - run Developer: Reload Window from the Command Palette (⇧⌘P).
+
+  If you were checking it on GitHub: nothing has been pushed yet, so GitHub
+  won't show these screenshots until you push.
+
+❯ What steps are remaining from my end?
+
+⏺ Here's what's left. First, a quick look at the two loose ends I can check from
+  here:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ The code side is finished: 36 commits, 306 tests passing, screenshots in
+  place. What's left is on your side:
+
+  1. Finish and commit TRANSCRIPT.md.
+     - It's in the folder but not committed yet: 13,359 lines, about 0.8 MB.
+     - It already mentions the screenshots. Make sure it also includes this last
+       exchange (the button fix and this question), since the brief asks for
+       the full transcript.
+     - It contains no Gmail address. Skim it for anything else you'd rather not
+       publish.
+     - Then commit it: git add TRANSCRIPT.md && git commit -m "Add AI
+       development transcript".
+  2. Create the GitHub repo and push. Create an empty repo on GitHub (no README
+     or .gitignore, since we have both), then:
+  git remote add origin https://github.com/<you>/<repo>.git
+  git push -u origin main
+     If it's private, add the reviewers as collaborators; otherwise make it
+     public.
+  3. Check it on GitHub.
+     - The README's screenshots show (docs/screenshots/…).
+     - The TRANSCRIPT.md, SPEC.md and CLAUDE.md links work.
+     - The assignment PDF and .env are not there (.gitignore excludes them).
+  4. Optional but reassuring: test a clean clone from GitHub. git clone <url> &&
+     cd <repo> && docker compose up --build, then open http://localhost:5173.
+     Run docker compose down first, so your current stack doesn't hold the
+     ports.
+  5. Stop the local stack when you're done: docker compose down. Add -v to also
+     delete the demo database volume.
+  6. Submit the GitHub link.
+
+❯ <ide_selection>The user selected the lines 3 to 3 from
+  /Users/debangichoudhury/Projects/assignment/codeyoung/CLAUDE.md:
+  Codeyoung
+
+  This may or may not be related to the current task.</ide_selection>
+
+❯ Reviewed the pushed repo. One product issue: a London parent's grid starts
+  with 12 AM, 1 AM, 2 AM, 3 AM, 5 AM. Those are US-evening and Sydney mentor
+  slots converted to London time. Correct, but no parent books a young kid's
+  class at 2 AM, and it's the first thing in our first screenshot.
+
+  Please:
+  1. By default, show only times between 7:00 AM and 9:00 PM in the parent's
+  zone. Add a clear toggle under the grid: "Show early-morning and late-night
+  times (N)". The date-strip counts should match what's visible by default, so
+  a day with only night slots says "No daytime times" rather than "5 open".
+  2. Alternatives on a 409 should prefer daytime slots too, falling back to
+  night ones only if there aren't enough.
+  3. Keep the hours as constants in one place, test both the default and the
+  toggle, and add a line to the README's UX notes explaining the choice.
+  4. Retake the screenshots the same way (Europe/London, 390px) and update the
+  README test counts.
+
+⏺ Plan, in order:
+  - One source for the hours: packages/shared/src/time/daytime.ts, used by both
+    the web app (grid filter, date strip, next open time) and the API
+    (alternatives). A time counts as daytime if the whole class fits between
+    7:00 AM and 9:00 PM in the parent's zone, so 8:00 PM is the last start.
+  - Alternatives prefer daytime, but only when the requested time was itself
+    daytime. If a parent deliberately chose a night time, a night alternative is
+    fine.
+
+  Starting with the shared helper and its tests:
+
+⏺ Bash(cd
+      /Users/debangichoudhury/Projects/assignment/codeyoung/packages/shared/src
+      && cat > time/daytime.ts <<'EOF'
+      import type { DateTime } from 'luxon';…)
+  ⎿  Updated packages/shared/src/index.ts (+1 -0)
+      3  export { zoneLabel, offsetLabel, formatDate, formatTime, formatI
+         nstant } from './time/format.js';
+      4  export { localDayBounds, localDateOf, type UtcRange } from './ti
+         me/days.js';
+      5  export * from './api/schemas.js';
+      6 +export { CLASS_MINUTES, DAYTIME_END_HOUR, DAYTIME_START_HOUR, is
+        +Daytime } from './time/daytime.js';                             
+  ⎿  Created packages/shared/src/time/daytime.test.ts (+39 -0)
+       1 +import { describe, expect, it } from 'vitest';                 
+       2 +import { DAYTIME_END_HOUR, DAYTIME_START_HOUR, isDaytime } from
+         + './daytime.js';                                               
+       3 +                                                               
+       4 +const LONDON = 'Europe/London';                                
+       5 +                                                               
+       6 +describe('isDaytime', () => {                                  
+       7 +  it('is 7:00 AM to 9:00 PM: the whole class must fit', () => {
+       8 +    expect([DAYTIME_START_HOUR, DAYTIME_END_HOUR]).toEqual([7, 
+         +21]);                                                          
+       9 +    // Thu 12 Nov 2026, London is GMT+0, so UTC hours read as l
+         +ocal hours.                                                    
+      10 +    expect(isDaytime('2026-11-12T06:00:00Z', LONDON)).toBe(fals
+         +e); // 6:00 AM                                                 
+      11 +    expect(isDaytime('2026-11-12T07:00:00Z', LONDON)).toBe(true
+         +); // 7:00 AM, first start                                     
+      12 +    expect(isDaytime('2026-11-12T20:00:00Z', LONDON)).toBe(true
+         +); // 8:00 PM, ends at 9:00 PM                                 
+      13 +    expect(isDaytime('2026-11-12T21:00:00Z', LONDON)).toBe(fals
+         +e); // 9:00 PM, ends at 10:00 PM                               
+      14 +    expect(isDaytime('2026-11-13T02:00:00Z', LONDON)).toBe(fals
+         +e); // 2:00 AM                                                 
+      15 +  });                                                          
+      16 +                                                               
+      17 +  it('uses the parent’s zone, so the same instant can be night 
+         +in London and evening in New York', () => {                    
+      18 +    expect(isDaytime('2026-11-13T01:00:00Z', LONDON)).toBe(fals
+         +e); // 1:00 AM London                                          
+      19 +    expect(isDaytime('2026-11-13T01:00:00Z', 'America/New_York'
+         +)).toBe(true); // 8:00 PM NY                                   
+      20 +  });                                                          
+      21 +                                                               
+      22 +  it('follows DST: the same UTC hour is 6 AM in winter and 7 AM
+         + in summer in London', () => {                                 
+      23 +    expect(isDaytime('2027-03-27T06:00:00Z', LONDON)).toBe(fals
+         +e); // 6:00 AM GMT                                             
+      24 +    expect(isDaytime('2027-03-28T06:00:00Z', LONDON)).toBe(true
+         +); // 7:00 AM BST                                              
+      25 +  });                                                          
+      26 +                                                               
+      27 +  it('works for half-hour zones (Adelaide sees :30 starts)', ()
+         + => {                                                          
+      28 +    expect(isDaytime('2026-11-12T20:30:00Z', 'Australia/Adelaid
+         +e')).toBe(true); // 7:00 AM ACDT                               
+      29 +    expect(isDaytime('2026-11-12T10:00:00Z', 'Australia/Adelaid
+         +e')).toBe(false); // 8:30 PM → ends 9:30 PM                    
+      30 +  });                                                          
+      31 +                                                               
+      32 +  it('respects a different class length', () => {              
+      33 +    expect(isDaytime('2026-11-12T20:00:00Z', LONDON, 90)).toBe(
+         +false); // 8:00 PM + 90 min                                    
+      34 +  });                                                          
+      35 +                                                               
+      36 +  it('is false for an unknown zone rather than throwing', () =>
+         + {                                                             
+      37 +    expect(isDaytime('2026-11-12T12:00:00Z', 'Nope/Zone')).toBe
+         +(false);                                                       
+      38 +  });                                                          
+      39 +});                                                            
+  ⎿  Created packages/shared/src/time/daytime.ts (+22 -0)
+       1 +import type { DateTime } from 'luxon';                         
+       2 +import { parseInstant } from './instant.js';                   
+       3 +                                                               
+       4 +/**                                                            
+       5 + * "Daytime" for a young child's class, in the parent's own zon
+         +e: the whole class fits between                                
+       6 + * 7:00 AM and 9:00 PM. The UI shows only these times by defaul
+         +t (others behind a toggle) and                                 
+       7 + * 409 alternatives prefer them. The one place these hours are 
+         +defined.                                                       
+       8 + */                                                            
+       9 +export const DAYTIME_START_HOUR = 7;                           
+      10 +export const DAYTIME_END_HOUR = 21;                            
+      11 +export const CLASS_MINUTES = 60;                               
+      12 +                                                               
+      13 +export function isDaytime(                                     
+      14 +  startUtc: DateTime | string,                                 
+      15 +  zone: string,                                                
+      16 +  durationMinutes: number = CLASS_MINUTES,                     
+      17 +): boolean {                                                   
+      18 +  const local = parseInstant(startUtc).setZone(zone);          
+      19 +  if (!local.isValid) return false;                            
+      20 +  const start = local.hour * 60 + local.minute;                
+      21 +  return start >= DAYTIME_START_HOUR * 60 && start + durationMi
+         +nutes <= DAYTIME_END_HOUR * 60;                                
+      22 +}                                                              
+
+⏺ All 70 shared tests pass. Next, alternatives on the API side:
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Bash(python3 - <<'EOF'
+      def rep(p,a,b):…)
+  ⎿  Updated apps/api/src/domain/alternatives.ts (+10 -2)
+      1  import type { DateTime } from 'luxon';
+      2 -import { assertValidZone } from '@codeyoung/shared';            
+      2 +import { assertValidZone, isDaytime } from '@codeyoung/shared'; 
+      3  import type { SlotAvailability } from './availability.js';
+      4  
+      5  export const MAX_ALTERNATIVES = 5;
+     ...
+       8   * Nearest bookable slots to a request the parent couldn't get 
+          (SPEC §8):
+       9   * first the same *parent-local* day, closest in time first (ea
+          rlier wins a tie),
+      10   * then the following days in time order. Earlier days are not 
+          offered.
+      11 + *                                                             
+      12 + * If the requested time was daytime for the parent (see isDayt
+         +ime), daytime alternatives come                                
+      13 + * first and early-morning/late-night ones only fill any remain
+         +ing places. A parent who chose a                               
+      14 + * night time on purpose gets the plain nearest-first order.   
+      15   */
+      16  export function nearestAlternatives(
+      17    slots: readonly SlotAvailability[],
+     ...
+      39    });
+      40    laterDays.sort((a, b) => a.startUtc.toMillis() - b.startUtc.t
+          oMillis());
+      41  
+      38 -  return [...sameDay, ...laterDays].slice(0, limit);           
+      42 +  const ordered = [...sameDay, ...laterDays];                  
+      43 +  if (!isDaytime(requestedStart, parentZone)) return ordered.sl
+         +ice(0, limit);                                                 
+      44 +  const daytime = ordered.filter((s) => isDaytime(s.startUtc, p
+         +arentZone));                                                   
+      45 +  const night = ordered.filter((s) => !isDaytime(s.startUtc, pa
+         +rentZone));                                                    
+      46 +  return [...daytime, ...night].slice(0, limit);               
+      47  }
+  ⎿  Updated apps/api/src/services/bookingService.ts (+6 -1)
+      2  import type { DateTime } from 'luxon';
+      3  import {
+      4    bookingResponseSchema,
+      5 +  isDaytime,                                                    
+      6    parseInstant,
+      7    type BookingRequest,
+      8    type BookingResponse,
+     ...
+      259      const dayStart = startUtc.setZone(request.parentTimezone).
+           startOf('day');
+      260      const soon = dayStart.plus({ days: 2 }).toUTC();
+      261      let found = soon < horizonEnd ? nearest(soon) : [];
+      261 -    if (found.length < MAX_ALTERNATIVES) found = nearest(horiz
+          -onEnd);                                                       
+      262 +    const preferDaytime = isDaytime(startUtc, request.parentTi
+          +mezone);                                                      
+      263 +    const enough =                                            
+      264 +      found.length === MAX_ALTERNATIVES &&                    
+      265 +      (!preferDaytime || found.every((s) => isDaytime(s.startU
+          +tc, request.parentTimezone)));                                
+      266 +    if (!enough) found = nearest(horizonEnd);                 
+      267      return found.map((s) => ({ startUtc: iso(s.startUtc), endU
+           tc: iso(s.endUtc) }));
+      268    }
+      269  }
+
+⏺ Both failing tests are expected from the intended change to late-night slots,
+  so I'm updating the first one's order and rewriting the second around Friday 8
+  PM New York; I'm also adding new tests for daytime-first and no-preference
+  cases. · summary
+
+⏺ Bash(python3 - <<'EOF'
+      def rep(p,a,b):…)
+  ⎿  Updated apps/api/src/domain/alternatives.test.ts (+35 -8)
+      23      slot('2026-11-13T22:00:00Z', 'FULLY_BOOKED'), // the reques
+          ted slot itself
+      24      slot('2026-11-13T23:00:00Z'), // Fri 6 PM (+1h): ties with 
+          4 PM, earlier wins
+      25      slot('2026-11-14T01:00:00Z', 'DAILY_LIMIT_REACHED'), // Fri
+           8 PM, unavailable
+      26 -    slot('2026-11-14T02:00:00Z'), // Fri 9 PM (+4h)            
+      26 +    slot('2026-11-14T02:00:00Z'), // Fri 9 PM (+4h): late-night
+         + (ends 10 PM), so only after daytime                           
+      27      slot('2026-11-14T20:00:00Z'), // Sat 3 PM
+      28      slot('2026-11-15T20:00:00Z'), // Sun 3 PM
+      29      slot('2026-11-16T20:00:00Z'), // Mon 3 PM
+      30    ];
+      31  
+      32 -  it('same parent-local day by closeness first (earlier on a ti
+         -e), then following days in order', () => {                     
+      32 +  it('same parent-local day by closeness first (earlier on a ti
+         +e), then following days, daytime first', () => {               
+      33      expect(starts(nearestAlternatives(slots, request, NY))).toE
+          qual([
+      34 +      '2026-11-13T21:00:00.000Z', // Fri 4 PM                  
+      35 +      '2026-11-13T23:00:00.000Z', // Fri 6 PM                  
+      36 +      '2026-11-13T19:00:00.000Z', // Fri 2 PM                  
+      37 +      '2026-11-14T20:00:00.000Z', // Sat 3 PM                  
+      38 +      '2026-11-15T20:00:00.000Z', // Sun 3 PM (Fri 9 PM is late
+         +-night, so it's left out)                                      
+      39 +    ]);                                                        
+      40 +  });                                                          
+      41 +                                                               
+      42 +  it('daytime first; early-morning and late-night times only fi
+         +ll the remaining places', () => {                              
+      43 +    const fewDaytime = [                                       
+      44 +      slot('2026-11-13T11:00:00Z'), // Fri 6 AM: early morning 
+      45 +      slot('2026-11-13T21:00:00Z'), // Fri 4 PM                
+      46 +      slot('2026-11-14T02:00:00Z'), // Fri 9 PM: late night    
+      47 +      slot('2026-11-14T05:00:00Z'), // Sat 12 AM: night        
+      48 +    ];                                                         
+      49 +    expect(starts(nearestAlternatives(fewDaytime, request, NY))
+         +).toEqual([                                                    
+      50        '2026-11-13T21:00:00.000Z',
+      35 -      '2026-11-13T23:00:00.000Z',                              
+      36 -      '2026-11-13T19:00:00.000Z',                              
+      51        '2026-11-14T02:00:00.000Z',
+      38 -      '2026-11-14T20:00:00.000Z',                              
+      52 +      '2026-11-13T11:00:00.000Z',                              
+      53 +      '2026-11-14T05:00:00.000Z',                              
+      54 +    ]);                                                        
+      55 +  });                                                          
+      56 +                                                               
+      57 +  it('a parent who chose a night time gets plain nearest-first 
+         +order, no daytime preference', () => {                         
+     … 23 more lines (ctrl+o to expand)
+  ⎿  (timeout 5m)
+
+⏺ All 180 API tests pass; I'm now moving to the web side, starting with the
+  day-filter helpers and the toggle in the grid and date strip. · summary
+
+⏺ Bash(cd /Users/debangichoudhury/Projects/assignment/codeyoung/apps/web/src &&
+      cat > lib/days.ts <<'EOF'
+      import type { SlotDto, SlotsResponse } from '@codeyoung/share…)
+  ⎿  Updated apps/web/src/copy.ts (+6 -0)
+      22    dayFull: 'Full',
+      23    dayClosed: 'Closed',
+      24    dayNoClasses: 'No classes',
+      25 +  dayNightOnly: 'No daytime times',                            
+      26  
+      27    timesHeading: 'Pick a time',
+      28    loadingTimes: 'Finding open times…',
+     ...
+      49    nextOpen: (when: string) => `Next open time: ${when}`,
+      50    noOpenOnDay: (date: string) => `No open times on ${date}.`,
+      51    noClassesOnDay: (date: string) => `No classes on ${date}.`,
+      52 +  noDaytimeOnDay: (date: string) => `No daytime times on ${date
+         +}.`,                                                           
+      53 +  showNightTimes: (n: number) => `Show early-morning and late-n
+         +ight times (${n})`,                                            
+      54 +  hideNightTimes: 'Hide early-morning and late-night times',   
+      55 +  daytimeHint: (from: string, to: string) =>                   
+      56 +    `Times between ${from} and ${to} in your time zone are show
+         +n first.`,                                                     
+      57    allFull:
+      58      'All trial times for the next 2 weeks are taken. New times 
+          open every day, so please check back tomorrow.',
+      59    /**
+  ⎿  Updated apps/web/src/lib/days.ts (+25 -9)
+       2  
+       3  export type Day = SlotsResponse['days'][number];
+       4  
+       5 +/** Which slots are on screen (daytime only by default; everyth
+         +ing once the parent opts in). */                               
+       6 +export type SlotFilter = (slot: SlotDto) => boolean;           
+       7 +export const SHOW_ALL: SlotFilter = () => true;                
+       8 +                                                               
+       9  export type DayStatus =
+       6 -  | { kind: 'open'; count: number }                            
+      10 +  | { kind: 'open'; count: number } // open times the parent ca
+         +n currently see                                                
+      11 +  | { kind: 'nightOnly' } // open times exist, but only early m
+         +orning / late night (hidden)                                   
+      12    | { kind: 'full' } // has times, none bookable
+      13    | { kind: 'closed' } // only times inside the notice period
+      14    | { kind: 'none' }; // no mentor works that day
+      15  
+      11 -export function dayStatus(day: Day): DayStatus {               
+      16 +export function dayStatus(day: Day, visible: SlotFilter = SHOW_
+         +ALL): DayStatus {                                              
+      17    if (day.slots.length === 0) return { kind: 'none' };
+      13 -  const count = day.slots.filter((s) => s.available).length;   
+      18 +  const open = day.slots.filter((s) => s.available);           
+      19 +  const count = open.filter(visible).length;                   
+      20    if (count > 0) return { kind: 'open', count };
+      21 +  if (open.length > 0) return { kind: 'nightOnly' };           
+      22    return day.slots.every((s) => s.reason === 'TOO_SOON') ? { ki
+          nd: 'closed' } : { kind: 'full' };
+      23  }
+      24  
+      18 -/** First bookable slot strictly after `afterUtc` (or overall w
+         -hen omitted). */                                               
+      19 -export function nextOpenSlot(days: readonly Day[], afterUtc?: s
+         -tring): SlotDto | null {                                       
+      25 +/** First bookable slot strictly after `afterUtc` (or overall w
+         +hen omitted) that passes `visible`. */                         
+      26 +export function nextOpenSlot(                                  
+      27 +  days: readonly Day[],                                        
+      28 +  afterUtc?: string,                                           
+      29 +  visible: SlotFilter = SHOW_ALL,                              
+      30 +): SlotDto | null {                                            
+      31    for (const day of days) {
+      32      for (const slot of day.slots) {
+      22 -      if (slot.available && (!afterUtc || slot.startUtc > after
+         -Utc)) return slot;                                             
+      33 +      if (slot.available && visible(slot) && (!afterUtc || slot
+         +.startUtc > afterUtc)) return slot;                            
+      34      }
+      35    }
+     … 15 more lines (ctrl+o to expand)
+
+⏺ Now the date strip: it takes the filter, and the new status gets the same
+  muted style as "Full":
+
+⏺ Bash(cd /Users/debangichoudhury/Projects/assignment/codeyoung/apps/web/src/fea
+      tures/booking && python3 - <<'EOF'
+      def rep(p,a,b):…)
+  ⎿  Updated apps/web/src/features/booking/DateStrip.module.css (+2 -0)
+      69  
+      70  .full,
+      71  .closed,
+      72 +.nightOnly,                                                    
+      73  .none {
+      74    background: var(--unavailable-bg);
+      75    border-style: dashed;
+     ...
+      77  
+      78  .full .status,
+      79  .closed .status,
+      80 +.nightOnly .status,                                            
+      81  .none .status {
+      82    color: var(--unavailable-ink);
+      83  }
+  ⎿  Updated apps/web/src/features/booking/DateStrip.tsx (+14 -3)
+      1  import { useEffect, useRef } from 'react';
+      2  import { formatDate, localDayBounds } from '@codeyoung/shared';
+      3  import { copy } from '../../copy.js';
+      4 -import { dayStatus, type Day, type DayStatus } from '../../lib/d
+        -ays.js';                                                        
+      4 +import { dayStatus, SHOW_ALL, type Day, type DayStatus, type Slo
+        +tFilter } from '../../lib/days.js';                             
+      5  import styles from './DateStrip.module.css';
+      6  
+      7  interface DateStripProps {
+     ...
+      10    today: string;
+      11    selectedDate: string | null;
+      12    onSelect: (date: string) => void;
+      13 +  /** Counts only what the grid shows (daytime by default), so 
+         +the strip never over-promises. */                              
+      14 +  visible?: SlotFilter;                                        
+      15  }
+      16  
+      17  function statusText(status: DayStatus): string {
+     ...
+      20        return copy.dayOpen(status.count);
+      21      case 'full':
+      22        return copy.dayFull;
+      23 +    case 'nightOnly':                                          
+      24 +      return copy.dayNightOnly;                                
+      25      case 'closed':
+      26        return copy.dayClosed;
+      27      case 'none':
+     ...
+      30  }
+      31  
+      32  /** Horizontal day picker. Each day says in words whether it ha
+          s open times. */
+      29 -export function DateStrip({ days, zone, today, selectedDate, on
+         -Select }: DateStripProps) {                                    
+      33 +export function DateStrip({                                    
+      34 +  days,                                                        
+      35 +  zone,                                                        
+      36 +  today,                                                       
+      37 +  selectedDate,                                                
+      38 +  onSelect,                                                    
+      39 +  visible = SHOW_ALL,                                          
+      40 +}: DateStripProps) {                                           
+      41    const selectedRef = useRef<HTMLButtonElement>(null);
+      42  
+      43    useEffect(() => {
+     ...
+      51        </h2>
+     … 7 more lines (ctrl+o to expand)
+
+⏺ Now the grid. Reading it in full, since this change touches its structure:
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Bash(python3 - <<'EOF'
+      def rep(p,a,b):…)
+  ⎿  Updated apps/web/src/features/booking/SlotGrid.module.css (+29 -0)
+      124    text-align: left;
+      125    cursor: pointer;
+      126  }
+      127 +                                                              
+      128 +.nightToggle {                                                
+      129 +  margin-top: var(--space-4);                                 
+      130 +  display: grid;                                              
+      131 +  justify-items: center;                                      
+      132 +  gap: var(--space-1);                                        
+      133 +  text-align: center;                                         
+      134 +}                                                             
+      135 +                                                              
+      136 +.toggle {                                                     
+      137 +  min-height: var(--tap);                                     
+      138 +  padding: var(--space-2) var(--space-4);                     
+      139 +  border-radius: var(--radius-pill);                          
+      140 +  border: 1px solid var(--border-strong);                     
+      141 +  background: var(--surface);                                 
+      142 +  color: var(--ink);                                          
+      143 +  font-weight: 600;                                           
+      144 +  cursor: pointer;                                            
+      145 +}                                                             
+      146 +                                                              
+      147 +.toggle[aria-pressed='true'] {                                
+      148 +  background: var(--unavailable-bg);                          
+      149 +}                                                             
+      150 +                                                              
+      151 +.toggleHint {                                                 
+      152 +  margin: 0;                                                  
+      153 +  font-size: 0.875rem;                                        
+      154 +  color: var(--ink-muted);                                    
+      155 +}                                                             
+  ⎿  Updated apps/web/src/features/booking/SlotGrid.tsx (+104 -67)
+      1  import { Fragment, useEffect, useId, useRef, useState } from 're
+         act';
+      2  import {
+      3 +  DAYTIME_END_HOUR,                                             
+      4 +  DAYTIME_START_HOUR,                                           
+      5    formatDate,
+      6    formatInstant,
+      7    formatTime,
+     ...
+      13    type UnavailableReason,
+      14  } from '@codeyoung/shared';
+      15  import { copy } from '../../copy.js';
+      16 +import type { SlotFilter } from '../../lib/days.js';           
+      17  import styles from './SlotGrid.module.css';
+      18  
+      19  interface SlotGridProps {
+     ...
+      30    /** Move keyboard focus to this slot once it is rendered (aft
+          er a jump). */
+      31    focusStart?: string | null;
+      32    headingRef?: React.Ref<HTMLHeadingElement>;
+      33 +  /** Daytime in the parent's zone (shared isDaytime); other ti
+         +mes sit behind the toggle. */                                  
+      34 +  isDaytimeSlot: SlotFilter;                                   
+      35 +  showNight: boolean;                                          
+      36 +  onToggleNight: () => void;                                   
+      37 +}                                                              
+      38 +                                                               
+      39 +/** "7:00 AM" for an hour of the day, for the toggle's hint. */
+      40 +function clockHour(hour: number): string {                     
+      41 +  return `${hour % 12 || 12}:00 ${hour < 12 ? 'AM' : 'PM'}`;   
+      42  }
+      43  
+      44  function reasonMessage(
+     ...
+      67      nextOpenAfter,
+      68      onJumpTo,
+      69      focusStart,
+      70 +    isDaytimeSlot,                                             
+      71 +    showNight,                                                 
+      72 +    onToggleNight,                                             
+      73    } = props;
+      74    const [expanded, setExpanded] = useState<string | null>(null)
+          ;
+      75    const gridRef = useRef<HTMLDivElement>(null);
+     ...
+      89    const offsets = new Set(slots.map((s) => offsetLabel(s.startU
+          tc, zone)));
+      90    const mixedOffsets = offsets.size > 1; // a DST change happen
+          s on this day
+     … 175 more lines (ctrl+o to expand)
+
+⏺ Now the page: it holds the toggle state, works out once per data load which
+  slots are daytime, and passes the same filter to the strip, the grid and "next
+  open time". Reading the parts I'll touch:
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ Bash(python3 - <<'EOF'
+      def rep(p,a,b):…)
+  ⎿  Updated apps/web/src/pages/BookPage.tsx (+38 -3)
+      3  import {
+      4    formatInstant,
+      5    formatTime,
+      6 +  isDaytime,                                                    
+      7    localDateOf,
+      8    type BookingResponse,
+      9    type SlotDto,
+     ...
+      19  import { useSlots } from '../hooks/useSlots.js';
+      20  import { useTimezone } from '../hooks/useTimezone.js';
+      21  import { now } from '../lib/clock.js';
+      21 -import { defaultDate, nextOpenSlot } from '../lib/days.js';    
+      22 +import { defaultDate, nextOpenSlot, SHOW_ALL, type SlotFilter }
+         + from '../lib/days.js';                                        
+      23  import styles from './BookPage.module.css';
+      24  
+      25  function Skeleton() {
+     ...
+      55    const [notice, setNotice] = useState<string | null>(null);
+      56    const [focusStart, setFocusStart] = useState<string | null>(n
+          ull);
+      57    const [formInView, setFormInView] = useState(false);
+      58 +  // Early-morning and late-night times (outside 7 AM–9 PM for 
+         +the parent) are opt-in.                                        
+      59 +  const [showNight, setShowNight] = useState(false);           
+      60    const timesHeadingRef = useRef<HTMLHeadingElement>(null);
+      61  
+      62    const days = useMemo(() => slots.data?.days ?? [], [slots.dat
+          a]);
+      63 +  // Work out once per data load which starts are daytime for t
+         +his parent.                                                    
+      64 +  const daytimeStarts = useMemo(                               
+      65 +    () =>                                                      
+      66 +      new Set(                                                 
+      67 +        zone                                                   
+      68 +          ? days.flatMap((d) =>                                
+      69 +              d.slots.filter((s) => isDaytime(s.startUtc, zone)
+         +).map((s) => s.startUtc),                                      
+      70 +            )                                                  
+      71 +          : [],                                                
+      72 +      ),                                                       
+      73 +    [days, zone],                                              
+      74 +  );                                                           
+      75 +  const isDaytimeSlot = useCallback<SlotFilter>(               
+      76 +    (s) => daytimeStarts.has(s.startUtc),                      
+      77 +    [daytimeStarts],                                           
+      78 +  );                                                           
+      79 +  const visible = showNight ? SHOW_ALL : isDaytimeSlot;        
+     … 49 more lines (ctrl+o to expand)
+
+⏺ The app code compiles; the remaining errors are in older tests and one
+  days.map(dayStatus) call that passes the index by mistake. I'm fixing those
+  and then adding tests for the helpers, grid, date strip and page. · summary
+
+⏺ Bash(cd /Users/debangichoudhury/Projects/assignment/codeyoung/apps/web/src &&
+      python3 - <<'EOF'
+      def rep(p,a,b):…)
+  ⎿  Updated apps/web/src/features/booking/DateStrip.test.tsx (+24 -0)
+      41      fireEvent.click(screen.getByRole('button', { name: /Fri/ })
+          );
+      42      expect(onSelect).toHaveBeenCalledWith('2026-11-13');
+      43    });
+      44 +                                                               
+      45 +  it('counts only what the grid shows: a night-only day says "N
+         +o daytime times"', () => {                                     
+      46 +    const nightOnly = [                                        
+      47 +      {                                                        
+      48 +        date: '2026-11-16',                                    
+      49 +        slots: [                                               
+      50 +          { startUtc: '2026-11-16T07:00:00Z', endUtc: '2026-11-
+         +16T08:00:00Z', available: true },                              
+      51 +          { startUtc: '2026-11-16T08:00:00Z', endUtc: '2026-11-
+         +16T09:00:00Z', available: true },                              
+      52 +        ],                                                     
+      53 +      },                                                       
+      54 +    ];                                                         
+      55 +    const daytimeOnly = () => false;                           
+      56 +    render(                                                    
+      57 +      <DateStrip                                               
+      58 +        days={nightOnly}                                       
+      59 +        zone={NY}                                              
+      60 +        today="2026-11-12"                                     
+      61 +        selectedDate={null}                                    
+      62 +        onSelect={() => {}}                                    
+      63 +        visible={daytimeOnly}                                  
+      64 +      />,                                                      
+      65 +    );                                                         
+      66 +    expect(screen.getByRole('button').textContent).toBe('Mon16 
+         +Nov✕No daytime times');                                        
+      67 +  });                                                          
+      68  });
+  ⎿  Updated apps/web/src/features/booking/SlotGrid.test.tsx (+76 -0)
+      1  import { describe, expect, it, vi } from 'vitest';
+      2  import { description } from '../../testUtils.js';
+      3  import { cleanup, fireEvent, render, screen } from '@testing-lib
+         rary/react';
+      4 +import { isDaytime, type SlotDto } from '@codeyoung/shared';    
+      5  import { SlotGrid } from './SlotGrid.js';
+      6  import { NY, slot, slotsResponse } from '../../testFixtures.js';
+      7  import { nextOpenSlot } from '../../lib/days.js';
+     ...
+      19      onSelect: vi.fn(),
+      20      nextOpenAfter: (start: string) => nextOpenSlot(days, start)
+          ,
+      21      onJumpTo: vi.fn(),
+      22 +    isDaytimeSlot: (s: SlotDto) => isDaytime(s.startUtc, NY),  
+      23 +    showNight: false,                                          
+      24 +    onToggleNight: vi.fn(),                                    
+      25      ...overrides,
+      26    };
+      27    render(<SlotGrid {...props} />);
+     ...
+      136          onSelect={() => {}}
+      137          nextOpenAfter={() => null}
+      138          onJumpTo={() => {}}
+      139 +        isDaytimeSlot={(s) => isDaytime(s.startUtc, NY)}      
+      140 +        showNight                                             
+      141 +        onToggleNight={() => {}}                              
+      142        />,
+      143      );
+      144      expect(screen.getByText('Sun 7 Nov · New York time')).toBe
+           Truthy();
+     ...
+      148        '2:00 AMGMT-5',
+      149      ]);
+      150    });
+      151 +                                                              
+      152 +  describe('early-morning and late-night times', () => {      
+      153 +    // Sat 14 Nov 2026 in New York: 5 AM and 11 PM are night, 
+          +9 AM and 4 PM are daytime.                                    
+      154 +    const mixed = [                                           
+      155 +      slot('2026-11-14T10:00:00Z'), // 5:00 AM                
+      156 +      slot('2026-11-14T14:00:00Z'), // 9:00 AM                
+      157 +      slot('2026-11-14T21:00:00Z'), // 4:00 PM                
+      158 +      slot('2026-11-15T04:00:00Z'), // 11:00 PM               
+      159 +    ];                                                        
+      160 +    const grid = (showNight: boolean, onToggleNight = vi.fn(),
+          + slots = mixed) => {                                          
+      161 +      render(                                                 
+      162 +        <SlotGrid                                             
+     … 58 more lines (ctrl+o to expand)
+  ⎿  Updated apps/web/src/lib/days.test.ts (+31 -2)
+      1  import { describe, expect, it } from 'vitest';
+      2 -import { dayStatus, defaultDate, nextOpenSlot, type Day } from '
+        -./days.js';                                                     
+      2 +import { dayStatus, defaultDate, nextOpenSlot, type Day, type Sl
+        +otFilter } from './days.js';                                    
+      3  
+      4  const slot = (startUtc: string, available: boolean, reason?: 'TO
+         O_SOON' | 'FULLY_BOOKED') => ({
+      5    startUtc,
+     ...
+      20  
+      21  describe('dayStatus', () => {
+      22    it('says closed, full, none or how many are open', () => {
+      23 -    expect(days.map(dayStatus)).toEqual([                      
+      23 +    expect(days.map((d) => dayStatus(d))).toEqual([            
+      24        { kind: 'closed' },
+      25        { kind: 'full' },
+      26        { kind: 'none' },
+     ...
+      42      expect(defaultDate([])).toBeNull();
+      43    });
+      44  });
+      45 +                                                               
+      46 +describe('with a daytime filter', () => {                      
+      47 +  // Pretend only 3 PM starts are daytime, to test the filter m
+         +echanics in isolation.                                         
+      48 +  const daytime: SlotFilter = (s) => s.startUtc.endsWith('T15:0
+         +0:00Z');                                                       
+      49 +  const nightOnlyDay: Day = {                                  
+      50 +    date: '2026-11-16',                                        
+      51 +    slots: [slot('2026-11-16T02:00:00Z', true), slot('2026-11-1
+         +6T03:00:00Z', true)],                                          
+      52 +  };                                                           
+      53 +                                                               
+      54 +  it('a day with open times only at night says nightOnly, not "
+         +2 open"', () => {                                              
+      55 +    expect(dayStatus(nightOnlyDay, daytime)).toEqual({ kind: 'n
+         +ightOnly' });                                                  
+      56 +    expect(dayStatus(nightOnlyDay)).toEqual({ kind: 'open', cou
+         +nt: 2 });                                                      
+      57 +  });                                                          
+      58 +                                                               
+      59 +  it('counts only visible open times', () => {                 
+      60 +    expect(dayStatus(days[3]!, daytime)).toEqual({ kind: 'open'
+         +, count: 1 });                                                 
+      61 +  });                                                          
+      62 +                                                               
+      63 +  it('default day and next open time skip hidden slots', () => 
+         +{                                                              
+      64 +    const withNight = [nightOnlyDay, ...days];                 
+      65 +    expect(defaultDate(withNight, daytime)).toBe('2026-11-15');
+      66 +    expect(defaultDate(withNight)).toBe('2026-11-16');         
+      67 +    expect(nextOpenSlot(withNight, undefined, daytime)?.startUt
+         +c).toBe('2026-11-15T15:00:00Z');                               
+     … 6 more lines (ctrl+o to expand)
+  ⎿  (timeout 5m)
+
+⏺ The clock-change test is failing only because it counts every button,
+  including the new "Hide early-morning and late-night times" toggle. I'll
+  change it to count only slot buttons with a data-start. · summary
+
+⏺ Bash(cd /Users/debangichoudhury/Projects/assignment/codeyoung/apps/web/src/fea
+      tures/booking && grep -n "screen.getAllByRole('button').map((b) =>
+      b.textContent)" Slot…)
+  ⎿  Updated apps/web/src/features/booking/SlotGrid.test.tsx (+6 -5)
+      142        />,
+      143      );
+      144      expect(screen.getByText('Sun 7 Nov · New York time')).toBe
+           Truthy();
+      145 -    expect(screen.getAllByRole('button').map((b) => b.textCont
+          -ent)).toEqual([                                               
+      146 -      '1:00 AMGMT-4',                                         
+      147 -      '1:00 AMGMT-5',                                         
+      148 -      '2:00 AMGMT-5',                                         
+      149 -    ]);                                                       
+      145 +    expect(                                                   
+      146 +      screen                                                  
+      147 +        .getAllByRole('button')                               
+      148 +        .filter((b) => b.dataset.start) // slot buttons only (
+          +not the night-times toggle)                                   
+      149 +        .map((b) => b.textContent),                           
+      150 +    ).toEqual(['1:00 AMGMT-4', '1:00 AMGMT-5', '2:00 AMGMT-5']
+          +);                                                            
+      151    });
+      152  
+      153    describe('early-morning and late-night times', () => {
+  ⎿  (timeout 5m)
+
+⏺ All 73 pass. Last, a page-level test of the whole behaviour with a fixture
+  mixing night-only and daytime days:
+
+⏺ Bash(cd
+      /Users/debangichoudhury/Projects/assignment/codeyoung/apps/web/src/pages
+      && python3 - <<'EOF'
+      p='BookPage.test.tsx'; s=open(p).read()…)
+  ⎿  Updated apps/web/src/pages/BookPage.test.tsx (+39 -0)
+      111      expect(screen.getByRole('button', { name: 'Book free class
+           ' })).toBeTruthy();
+      112    });
+      113  
+      114 +  it('shows daytime times by default; early-morning and late-n
+          +ight ones behind a toggle', async () => {                     
+      115 +    const slot = (startUtc: string) => ({                     
+      116 +      startUtc,                                               
+      117 +      endUtc: new Date(Date.parse(startUtc) + 3_600_000).toISO
+          +String().replace('.000', ''),                                 
+      118 +      available: true,                                        
+      119 +    });                                                       
+      120 +    vi.spyOn(api, 'getSlots').mockResolvedValue({             
+      121 +      timezone: NY,                                           
+      122 +      policy: { minNoticeMinutes: 240, horizonDays: 14, dailyC
+          +ap: 2 },                                                      
+      123 +      days: [                                                 
+      124 +        // Fri 13 Nov in New York: only 2 AM and 3 AM.        
+      125 +        { date: '2026-11-13', slots: [slot('2026-11-13T07:00:0
+          +0Z'), slot('2026-11-13T08:00:00Z')] },                        
+      126 +        // Sat 14 Nov: 4 PM (daytime) and 10 PM (late night). 
+      127 +        { date: '2026-11-14', slots: [slot('2026-11-14T21:00:0
+          +0Z'), slot('2026-11-15T03:00:00Z')] },                        
+      128 +      ],                                                      
+      129 +    });                                                       
+      130 +    renderPage();                                             
+      131 +    const chip = (re: RegExp) => screen.getByRole('button', { 
+          +name: re });                                                  
+      132 +                                                              
+      133 +    // Default: counts match what's visible, and the page open
+          +s on the first day with daytime times.                        
+      134 +    await screen.findByText('Sat 14 Nov · New York time (GMT-5
+          +)');                                                          
+      135 +    expect(chip(/^Fri/).textContent).toContain('No daytime tim
+          +es');                                                         
+      136 +    expect(chip(/^Sat/).textContent).toContain('1 open');     
+      137 +    expect(screen.queryByRole('button', { name: '10:00 PM' }))
+          +.toBeNull();                                                  
+      138 +    expect(screen.getByRole('button', { name: '4:00 PM' })).to
+          +BeTruthy();                                                   
+      139 +                                                              
+      140 +    // Opting in reveals them, updates the counts, and keeps t
+          +he parent on the same day.                                    
+      141 +    fireEvent.click(                                          
+      142 +      screen.getByRole('button', { name: 'Show early-morning a
+          +nd late-night times (1)' }),                                  
+      143 +    );                                                        
+      144 +    expect(screen.getByRole('button', { name: '10:00 PM' })).t
+          +oBeTruthy();                                                  
+      145 +    expect(screen.getByText('Sat 14 Nov · New York time (GMT-5
+          +)')).toBeTruthy();                                            
+      146 +    expect(chip(/^Fri/).textContent).toContain('2 open');     
+      147 +    expect(chip(/^Sat/).textContent).toContain('2 open');     
+      148 +    expect(                                                   
+      149 +      screen.getByRole('button', { name: 'Hide early-morning a
+          +nd late-night times' }),                                      
+      150 +    ).toBeTruthy();                                           
+     … 5 more lines (ctrl+o to expand)
+  ⎿  (timeout 5m)
+
+⏺ Everything passes: 70 shared, 180 API, 74 web. Getting the API
+  unit/integration split for the README:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ 324 tests in total (70 + 114 + 66 + 74). Updating the README: the counts, a UX
+  note explaining the daytime choice, the alternatives rule in the API docs,
+  and a trade-off row.
+
+⏺ Bash(python3 - <<'EOF'
+      def rep(p,a,b):…)
+  ⎿  Updated README.md (+10 -5)
+      103  npm test                  # all workspaces
+      104  ```
+      105  
+      106 -**306 tests**, all passing:                                   
+      106 +**324 tests**, all passing:                                   
+      107  
+      108  | Workspace | Tests | What they cover |
+      109  |---|---|---|
+      110 -| `packages/shared` | 64 | Time formatting, zone validation, l
+          -ocal day bounds (23h and 25h days) |                          
+      111 -| `apps/api` unit | 112 | Pure domain logic: slots and shift d
+          -ates (including a class that spans a DST change), availability
+          - and reasons, booking window, both assignment strategies, alte
+          -rnatives, emails, `.ics`, request fingerprints, the seed plann
+          -er, config, clock, the booking service (backstop, replay, dupl
+          -icates, outbox) |                                             
+      110 +| `packages/shared` | 70 | Time formatting, zone validation, l
+          +ocal day bounds (23h and 25h days), the daytime window (includ
+          +ing DST and half-hour zones) |                                
+      111 +| `apps/api` unit | 114 | Pure domain logic: slots and shift d
+          +ates (including a class that spans a DST change), availability
+          + and reasons, booking window, both assignment strategies, alte
+          +rnatives (daytime first), emails, `.ics`, request fingerprints
+          +, the seed planner, config, clock, the booking service (backst
+          +op, replay, duplicates, outbox) |                             
+      112  | `apps/api` integration | 66 | Real Postgres: migrations, see
+           d, slots/booking/outbox/calendar APIs, duplicate trials (inclu
+           ding one in progress), idempotency, a booking spanning the US 
+           clock change, **concurrency (X1, X2, X3, X5)**, lock timeouts 
+           |
+      113 -| `apps/web` | 64 | Components and pages (date strip, slot gri
+          -d, form with alternatives and duplicates, confirmation, outbox
+          -) plus pure helpers (phone, zones, days, UUIDs, clipboard). In
+          -cludes booking and copying the class link on plain http, where
+          - `crypto.randomUUID` and `navigator.clipboard` don't exist. | 
+      113 +| `apps/web` | 74 | Components and pages (date strip, slot gri
+          +d with the night-times toggle, form with alternatives and dupl
+          +icates, confirmation, outbox) plus pure helpers (phone, zones,
+          + days, UUIDs, clipboard). Includes booking and copying the cla
+          +ss link on plain http, where `crypto.randomUUID` and `navigato
+          +r.clipboard` don't exist. |                                   
+      114  
+      115  - **Traceable to the spec:** test names carry the IDs from the
+            test matrix in [SPEC.md §11](SPEC.md#11-test-matrix) (T1–T16 
+           for DST and zones, C1–C11 for capacity, X1–X2 for concurrency)
+           .
+      116  - **Integration database:** integration tests use a separate `
+           booking_test` database. It's rebuilt from the migrations once 
+           per run, and the test files run one at a time.
+     ...
+      202  | — | **No temporary slot holds (no Redis).** | At ~20 booking
+           s/day, a parent losing a slot while filling in the form is rar
+           e. It's handled with a friendly 409 and a refreshed list rathe
+           r than hold/expiry machinery. |
+      203  | — | **No ORM; one Dockerfile; `vite preview` serves the web 
+           build.** | Fewer moving parts. The locking SQL is visible, and
+            there's no nginx config to maintain. |
+      204  | — | **A start time already in the past is "too soon" (409), 
+           not invalid (422).** | It almost always means the parent left 
+           the form open; alternatives help more than a validation error.
+            |
+      205 +| — | **Night times are hidden by default, not removed.** | 7:
+          +00 AM–9:00 PM local covers after-school and weekend times for 
+          +every market we serve, while a parent who really wants 6 AM ca
+          +n still see it. Mentor availability is unchanged; this is pure
+          +ly what's shown first. |                                      
+      206  | — | **Parent-facing reasons describe the time, not the rule.
+           ** | "No mentor is free at 4:00 PM on Sat 14 Nov" rather than 
+           "our mentors reached their daily limit", which wrongly suggest
+           s the whole day is full. The precise reason stays in the API f
+           or clients and logs. |
+      207  | — | **Choosing an alternative takes two taps: select, then c
+           onfirm.** | Parents can't cancel or reschedule, so a mis-tap (
+           tomorrow instead of today) would leave them stuck. |
+      208  | — | **A failed attempt doesn't use up its Idempotency-Key.**
+            | The key's row rolls back with the failed transaction, so a 
+           retry after a 409 or a timeout runs fresh. Only a successful b
+           ooking's response is replayed. Keys don't expire yet (see next
+            steps). |
+     ...
+      414  }
+      415  ```
+      416  
+      416 -`alternatives` is always present (possibly empty). It holds up
+          - to 5 open slots: the same **parent-local** day first, closest
+          - in time (the earlier wins a tie), then the following days in 
+          -order. Earlier days are never offered. They're computed after 
+          -the failed transaction rolls back, so they already exclude the
+          - booking that just won.                                       
+      417 +`alternatives` is always present (possibly empty). It holds up
+          + to 5 open slots: the same **parent-local** day first, closest
+          + in time (the earlier wins a tie), then the following days in 
+          +order. Earlier days are never offered. If the requested time w
+          +as daytime for the parent (7:00 AM–9:00 PM in their zone), day
+          +time alternatives come first and early-morning or late-night o
+          +nes only fill any remaining places. They're computed after the
+          + failed transaction rolls back, so they already exclude the bo
+          +oking that just won.                                          
+      418  
+      419  **409 `DUPLICATE_TRIAL` body:**
+      420  
+     ...
+      448    - Unavailable times always show a short label ("Booked" or "
+           Too soon"). Tapping one opens the full reason inline, e.g. "No
+            mentor is free at 4:00 PM on Sat 14 Nov. Please pick another 
+           time.", with a "Next open time" button; nothing depends on hov
+           er.
+      449    - Reasons are always about **that time**, never about the da
+           y or internal rules. A time where every covering mentor has hi
+           t their daily cap reads exactly like a booked one, because oth
+           er times that day may well be open. The API still distinguishe
+           s them in `details.reason`.
+      450    - Screen readers get the reason through `aria-describedby`.
+      451 +- **Daytime first:** the grid shows only times between **7:00 
+          +AM and 9:00 PM in the parent's own zone** by default, because 
+          +no one books a young child's class at 2 AM. Those other slots 
+          +exist only because Indian mentors' shifts for the US and Austr
+          +alia land at night in London, and vice versa.                 
+      452 +  - A toggle under the grid ("Show early-morning and late-nigh
+          +t times (N)") reveals them, and the date strip's counts follow
+          + what's visible, so a day with only night slots says "No dayti
+          +me times" rather than "5 open".                               
+      453 +  - 409 alternatives prefer daytime too.                      
+      454 +  - The hours are defined once, in [`daytime.ts`](packages/sha
+          +red/src/time/daytime.ts), and shared by the web app and the AP
+          +I.                                                            
+     … 3 more lines (ctrl+o to expand)
+
+⏺ Now the screenshots: rebuild so the stack serves the new code, reseed, and
+  retake all five the same way (London, 390 px):
+
+  Read 2 files, ran 1 shell command (ctrl+o to expand)
+
+⏺ Shot 1 now starts at 7:00 AM and shot 2 gets a fix for the "(9)" wrap; I'll
+  retake after adding a no-break space and rerunning the two test lookups.
+  · summary
+
+⏺ Bash(python3 - <<'EOF'
+      def rep(p,a,b,count=1):…)
+  ⎿  Updated apps/web/src/copy.ts (+2 -1)
+      50    noOpenOnDay: (date: string) => `No open times on ${date}.`,
+      51    noClassesOnDay: (date: string) => `No classes on ${date}.`,
+      52    noDaytimeOnDay: (date: string) => `No daytime times on ${date
+          }.`,
+      53 -  showNightTimes: (n: number) => `Show early-morning and late-n
+         -ight times (${n})`,                                            
+      53 +  /** A no-break space keeps "times (N)" together, so the count
+         + never wraps onto its own line. */                             
+      54 +  showNightTimes: (n: number) => `Show early-morning and late-n
+         +ight times\u00a0(${n})`,                                       
+      55    hideNightTimes: 'Hide early-morning and late-night times',
+      56    daytimeHint: (from: string, to: string) =>
+      57      `Times between ${from} and ${to} in your time zone are show
+          n first.`,
+  ⎿  Updated apps/web/src/features/booking/SlotGrid.module.css (+1 -0)
+      135  
+      136  .toggle {
+      137    min-height: var(--tap);
+      138 +  text-wrap: balance;                                         
+      139    padding: var(--space-2) var(--space-4);
+      140    border-radius: var(--radius-pill);
+      141    border: 1px solid var(--border-strong);
+  ⎿  Updated apps/web/src/features/booking/SlotGrid.test.tsx (+1 -1)
+      186        const onToggle = grid(false);
+      187        expect(times()).toEqual(['9:00 AM', '4:00 PM']);
+      188        const toggle = screen.getByRole('button', {
+      189 -        name: 'Show early-morning and late-night times (2)',  
+      189 +        name: /^Show early-morning and late-night times\s\(2\)
+          +$/,                                                           
+      190        });
+      191        expect(toggle.getAttribute('aria-pressed')).toBe('false'
+           );
+      192        expect(
+  ⎿  Updated apps/web/src/pages/BookPage.test.tsx (+1 -1)
+      139  
+      140      // Opting in reveals them, updates the counts, and keeps t
+           he parent on the same day.
+      141      fireEvent.click(
+      142 -      screen.getByRole('button', { name: 'Show early-morning a
+          -nd late-night times (1)' }),                                  
+      142 +      screen.getByRole('button', { name: /^Show early-morning 
+          +and late-night times\s\(1\)$/ }),                             
+      143      );
+      144      expect(screen.getByRole('button', { name: '10:00 PM' })).t
+           oBeTruthy();
+      145      expect(screen.getByText('Sat 14 Nov · New York time (GMT-5
+           )')).toBeTruthy();
+  ⎿  (timeout 5m)
+
+⏺ Bash(python3 - <<'EOF'
+      p='apps/web/src/features/booking/SlotGrid.test.tsx'; s=open(p).read()…)  ⎿  Updated apps/web/src/features/booking/SlotGrid.test.tsx (+1 -1)
+      209        grid(false, vi.fn(), [mixed[0]!, mixed[3]!]);
+      210        expect(screen.getByText('No daytime times on Sat 14 Nov.
+           ')).toBeTruthy();
+      211        expect(
+      212 -        screen.getByRole('button', { name: /Show early-morning
+          - and late-night times \(2\)/ }),                              
+      212 +        screen.getByRole('button', { name: /Show early-morning
+          + and late-night times\s\(2\)/ }),                             
+      213        ).toBeTruthy();
+      214      });
+      215  
+  ⎿  (timeout 5m)
+
+  Read 3 files, ran 1 shell command (ctrl+o to expand)
+
+⏺ Shot 2's toggle now shows the early-morning and late-night count, and shots 3
+  and 4 still carry the daytime-only alternatives. Next I'll run the full suite
+  and make three commits: shared with API, web, and README with screenshots.
+  · summary
+
+⏺ Bash(SCR=/private/tmp/claude-501/-Users-debangichoudhury-Projects-assignment-c
+      odeyoung/73160ce7-afbb-433b-a791-7345507b6d3e/scratchpad/shots && cp
+      $SCR/out/*.png doc…)
+  ⎿  5 files changed (binary, mode only or too large to show)
+  ⎿  (timeout 5m)
+
+⏺ Everything passes. (TRANSCRIPT.md no longer shows as untracked, so it looks
+  like you committed it.)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ A London parent's grid now starts at 7:00 AM instead of 12 AM. All four items
+  are done, in three local commits that aren't pushed yet (run git push to
+  update GitHub). All 324 tests pass: 70 shared, 114 API unit, 66 API
+  integration, 74 web.
+
+  1. Daytime by default, with a toggle (9c54e5a)
+     - What's shown: the grid shows only classes that fit between 7:00 AM and
+       9:00 PM in the parent's zone, so 8 PM is the last start.
+     - The toggle: "Show early-morning and late-night times (N)" sits under the
+       grid, with the hint "Times between 7:00 AM and 9:00 PM in your time zone
+       are shown first." Once on, it reads "Hide early-morning and late-night
+       times".
+     - Date-strip counts follow what's visible: a day with only night times says
+       "No daytime times", and switching the toggle on updates the counts.
+     - Two related behaviours:
+       - switching the toggle keeps the parent on the same day;
+       - "Next open time" prefers daytime, and if it has to jump to a night slot
+         it switches the toggle on, so it never lands on a hidden time.
+  2. Alternatives prefer daytime (9f46b99)
+     - Daytime alternatives come first; early-morning and late-night ones only
+       fill any remaining places.
+     - If the 2-day scan doesn't find 5 daytime ones, it scans the full 14 days.
+     - The preference applies only when the requested time was itself daytime; a
+       parent who chose a night time gets plain nearest-first.
+     - One expected test change: an old alternatives test had a Friday 9 PM New
+       York slot in the top 5. That slot is now late-night, since a 9 PM class
+       ends at 10 PM, so it drops behind Saturday and Sunday. I updated that
+       expectation and rewrote the "local day, not UTC day" test around Friday 8
+       PM.
+  3. Constants, tests and README
+     - Constants: DAYTIME_START_HOUR, DAYTIME_END_HOUR and isDaytime() live in
+       one file, daytime.ts (packages/shared/src/time/daytime.ts), used by both
+       the web app and the API.
+     - Tests: the boundaries (7:00 in, 8:00 PM in, 9:00 PM out), DST, half-hour
+       zones, the default and toggled grid, the date-strip label, and a
+       page-level test of the whole flow.
+     - README: a UX note explaining the choice, the alternatives rule in the API
+       docs, a trade-off row ("hidden by default, not removed"), and the counts
+       updated to 324.
+  4. Screenshots (72185fd)
+     - Retaken the same way (Europe/London, 390 px) after a reseed.
+     - Shot 1 now shows Friday as "7 open" with times from 7:00 AM to 8:00 PM.
+     - Shot 2 shows the toggle "Show early-morning and late-night times (9)".
+     - Fix found on the way: the first retake showed "(9)" wrapping alone onto
+       its own line. A no-break space plus balanced wrapping fixed it before I
+       committed.
+     - Shots 3–5 still use the Sunday 4 PM scenario, with only daytime
+       alternatives.
+
+❯ Change the daytime window to end at 10:00 PM instead of 9:00 PM, so the last
+  daytime start is 9:00 PM. Older students can reasonably take a 9 PM class.
+  Update the hint text, tests and README to match, and retake screenshot 2 if
+  the count in the toggle changes.
+
+⏺ Changing DAYTIME_END_HOUR from 21 to 22 makes 9:00 PM the last daytime start.
+  Everything else follows from that one constant, including the hint, which is
+  built from it. First, finding every place that mentions the old hours:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ The two format.test.ts hits are unrelated, since they just format 9 PM. I'll
+  check the two other boundary cases in daytime.test.ts next. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Both of those are boundary checks, so changing the end hour breaks their
+  expected results. I'm moving their inputs so they still test their edges
+  instead of just flipping the expectations. · summary
+
+⏺ Bash(python3 - <<'EOF'
+      def rep(p,a,b):…)
+  ⎿  Updated README.md (+3 -3)
+      202  | — | **No temporary slot holds (no Redis).** | At ~20 booking
+           s/day, a parent losing a slot while filling in the form is rar
+           e. It's handled with a friendly 409 and a refreshed list rathe
+           r than hold/expiry machinery. |
+      203  | — | **No ORM; one Dockerfile; `vite preview` serves the web 
+           build.** | Fewer moving parts. The locking SQL is visible, and
+            there's no nginx config to maintain. |
+      204  | — | **A start time already in the past is "too soon" (409), 
+           not invalid (422).** | It almost always means the parent left 
+           the form open; alternatives help more than a validation error.
+            |
+      205 -| — | **Night times are hidden by default, not removed.** | 7:
+          -00 AM–9:00 PM local covers after-school and weekend times for 
+          -every market we serve, while a parent who really wants 6 AM ca
+          -n still see it. Mentor availability is unchanged; this is pure
+          -ly what's shown first. |                                      
+      205 +| — | **Night times are hidden by default, not removed.** | 7:
+          +00 AM–10:00 PM local (last start 9:00 PM, which suits older st
+          +udents) covers after-school and weekend times for every market
+          + we serve, while a parent who really wants 6 AM can still see 
+          +it. Mentor availability is unchanged; this is purely what's sh
+          +own first. |                                                  
+      206  | — | **Parent-facing reasons describe the time, not the rule.
+           ** | "No mentor is free at 4:00 PM on Sat 14 Nov" rather than 
+           "our mentors reached their daily limit", which wrongly suggest
+           s the whole day is full. The precise reason stays in the API f
+           or clients and logs. |
+      207  | — | **Choosing an alternative takes two taps: select, then c
+           onfirm.** | Parents can't cancel or reschedule, so a mis-tap (
+           tomorrow instead of today) would leave them stuck. |
+      208  | — | **A failed attempt doesn't use up its Idempotency-Key.**
+            | The key's row rolls back with the failed transaction, so a 
+           retry after a 409 or a timeout runs fresh. Only a successful b
+           ooking's response is replayed. Keys don't expire yet (see next
+            steps). |
+     ...
+      414  }
+      415  ```
+      416  
+      417 -`alternatives` is always present (possibly empty). It holds up
+          - to 5 open slots: the same **parent-local** day first, closest
+          - in time (the earlier wins a tie), then the following days in 
+          -order. Earlier days are never offered. If the requested time w
+          -as daytime for the parent (7:00 AM–9:00 PM in their zone), day
+          -time alternatives come first and early-morning or late-night o
+          -nes only fill any remaining places. They're computed after the
+          - failed transaction rolls back, so they already exclude the bo
+          -oking that just won.                                          
+      417 +`alternatives` is always present (possibly empty). It holds up
+          + to 5 open slots: the same **parent-local** day first, closest
+          + in time (the earlier wins a tie), then the following days in 
+          +order. Earlier days are never offered. If the requested time w
+          +as daytime for the parent (a class that fits between 7:00 AM a
+          +nd 10:00 PM in their zone, so 9:00 PM is the last daytime star
+          +t), daytime alternatives come first and early-morning or late-
+          +night ones only fill any remaining places. They're computed af
+          +ter the failed transaction rolls back, so they already exclude
+          + the booking that just won.                                   
+      418  
+      419  **409 `DUPLICATE_TRIAL` body:**
+      420  
+     ...
+      448    - Unavailable times always show a short label ("Booked" or "
+           Too soon"). Tapping one opens the full reason inline, e.g. "No
+            mentor is free at 4:00 PM on Sat 14 Nov. Please pick another 
+           time.", with a "Next open time" button; nothing depends on hov
+           er.
+      449    - Reasons are always about **that time**, never about the da
+           y or internal rules. A time where every covering mentor has hi
+           t their daily cap reads exactly like a booked one, because oth
+           er times that day may well be open. The API still distinguishe
+           s them in `details.reason`.
+      450    - Screen readers get the reason through `aria-describedby`.
+      451 -- **Daytime first:** the grid shows only times between **7:00 
+          -AM and 9:00 PM in the parent's own zone** by default, because 
+          -no one books a young child's class at 2 AM. Those other slots 
+          -exist only because Indian mentors' shifts for the US and Austr
+          -alia land at night in London, and vice versa.                 
+      451 +- **Daytime first:** the grid shows only classes that fit betw
+          +een **7:00 AM and 10:00 PM in the parent's own zone** (the las
+          +t start is 9:00 PM, fine for older students) by default, becau
+          +se no one books a young child's class at 2 AM. Those other slo
+          +ts exist only because Indian mentors' shifts for the US and Au
+          +stralia land at night in London, and vice versa.              
+      452    - A toggle under the grid ("Show early-morning and late-nigh
+           t times (N)") reveals them, and the date strip's counts follow
+            what's visible, so a day with only night slots says "No dayti
+           me times" rather than "5 open".
+      453    - 409 alternatives prefer daytime too.
+      454    - The hours are defined once, in [`daytime.ts`](packages/sha
+           red/src/time/daytime.ts), and shared by the web app and the AP
+           I.
+  ⎿  Updated apps/api/src/domain/alternatives.test.ts (+7 -7)
+      23      slot('2026-11-13T22:00:00Z', 'FULLY_BOOKED'), // the reques
+          ted slot itself
+      24      slot('2026-11-13T23:00:00Z'), // Fri 6 PM (+1h): ties with 
+          4 PM, earlier wins
+      25      slot('2026-11-14T01:00:00Z', 'DAILY_LIMIT_REACHED'), // Fri
+           8 PM, unavailable
+      26 -    slot('2026-11-14T02:00:00Z'), // Fri 9 PM (+4h): late-night
+         - (ends 10 PM), so only after daytime                           
+      26 +    slot('2026-11-14T02:00:00Z'), // Fri 9 PM (+4h): the last d
+         +aytime start                                                   
+      27      slot('2026-11-14T20:00:00Z'), // Sat 3 PM
+      28      slot('2026-11-15T20:00:00Z'), // Sun 3 PM
+      29      slot('2026-11-16T20:00:00Z'), // Mon 3 PM
+     ...
+      34        '2026-11-13T21:00:00.000Z', // Fri 4 PM
+      35        '2026-11-13T23:00:00.000Z', // Fri 6 PM
+      36        '2026-11-13T19:00:00.000Z', // Fri 2 PM
+      37 +      '2026-11-14T02:00:00.000Z', // Fri 9 PM: still daytime (e
+         +nds 10 PM)                                                     
+      38        '2026-11-14T20:00:00.000Z', // Sat 3 PM
+      38 -      '2026-11-15T20:00:00.000Z', // Sun 3 PM (Fri 9 PM is late
+         --night, so it's left out)                                      
+      39      ]);
+      40    });
+      41  
+     ...
+      43      const fewDaytime = [
+      44        slot('2026-11-13T11:00:00Z'), // Fri 6 AM: early morning
+      45        slot('2026-11-13T21:00:00Z'), // Fri 4 PM
+      46 -      slot('2026-11-14T02:00:00Z'), // Fri 9 PM: late night    
+      46 +      slot('2026-11-14T03:00:00Z'), // Fri 10 PM: late night   
+      47        slot('2026-11-14T05:00:00Z'), // Sat 12 AM: night
+      48      ];
+      49      expect(starts(nearestAlternatives(fewDaytime, request, NY))
+          ).toEqual([
+      50 -      '2026-11-13T21:00:00.000Z',                              
+      51 -      '2026-11-14T02:00:00.000Z',                              
+      52 -      '2026-11-13T11:00:00.000Z',                              
+      53 -      '2026-11-14T05:00:00.000Z',                              
+      50 +      '2026-11-13T21:00:00.000Z', // daytime                   
+      51 +      '2026-11-14T03:00:00.000Z', // night: Fri 10 PM, 5h away 
+      52 +      '2026-11-13T11:00:00.000Z', // night: Fri 6 AM, 11h away 
+      53 +      '2026-11-14T05:00:00.000Z', // night: Sat 12 AM, next day
+      54      ]);
+      55    });
+      56  
+  ⎿  Updated apps/web/src/features/booking/SlotGrid.test.tsx (+1 -1)
+      190        });
+      191        expect(toggle.getAttribute('aria-pressed')).toBe('false'
+           );
+      192        expect(
+      193 -        screen.getByText('Times between 7:00 AM and 9:00 PM in
+          - your time zone are shown first.'),                           
+      193 +        screen.getByText('Times between 7:00 AM and 10:00 PM i
+          +n your time zone are shown first.'),                          
+      194        ).toBeTruthy();
+      195        fireEvent.click(toggle);
+      196        expect(onToggle).toHaveBeenCalledTimes(1);
+  ⎿  Updated apps/web/src/pages/BookPage.tsx (+1 -1)
+      55    const [notice, setNotice] = useState<string | null>(null);
+      56    const [focusStart, setFocusStart] = useState<string | null>(n
+          ull);
+      57    const [formInView, setFormInView] = useState(false);
+      58 -  // Early-morning and late-night times (outside 7 AM–9 PM for 
+         -the parent) are opt-in.                                        
+      58 +  // Early-morning and late-night times (outside 7 AM–10 PM for
+         + the parent) are opt-in.                                       
+      59    const [showNight, setShowNight] = useState(false);
+      60    const timesHeadingRef = useRef<HTMLHeadingElement>(null);
+      61  
+  ⎿  Updated packages/shared/src/time/daytime.test.ts (+9 -6)
+       4  const LONDON = 'Europe/London';
+       5  
+       6  describe('isDaytime', () => {
+       7 -  it('is 7:00 AM to 9:00 PM: the whole class must fit', () => {
+       8 -    expect([DAYTIME_START_HOUR, DAYTIME_END_HOUR]).toEqual([7, 
+         -21]);                                                          
+       7 +  it('is 7:00 AM to 10:00 PM: the whole class must fit, so 9:00
+         + PM is the last start', () => {                                
+       8 +    expect([DAYTIME_START_HOUR, DAYTIME_END_HOUR]).toEqual([7, 
+         +22]);                                                          
+       9      // Thu 12 Nov 2026, London is GMT+0, so UTC hours read as l
+          ocal hours.
+      10      expect(isDaytime('2026-11-12T06:00:00Z', LONDON)).toBe(fals
+          e); // 6:00 AM
+      11      expect(isDaytime('2026-11-12T07:00:00Z', LONDON)).toBe(true
+          ); // 7:00 AM, first start
+      12 -    expect(isDaytime('2026-11-12T20:00:00Z', LONDON)).toBe(true
+         -); // 8:00 PM, ends at 9:00 PM                                 
+      13 -    expect(isDaytime('2026-11-12T21:00:00Z', LONDON)).toBe(fals
+         -e); // 9:00 PM, ends at 10:00 PM                               
+      12 +    expect(isDaytime('2026-11-12T20:00:00Z', LONDON)).toBe(true
+         +); // 8:00 PM                                                  
+      13 +    expect(isDaytime('2026-11-12T21:00:00Z', LONDON)).toBe(true
+         +); // 9:00 PM, ends at 10:00 PM                                
+      14 +    expect(isDaytime('2026-11-12T22:00:00Z', LONDON)).toBe(fals
+         +e); // 10:00 PM, ends at 11:00 PM                              
+      15      expect(isDaytime('2026-11-13T02:00:00Z', LONDON)).toBe(fals
+          e); // 2:00 AM
+      16    });
+      17  
+     ...
+      27  
+      28    it('works for half-hour zones (Adelaide sees :30 starts)', ()
+           => {
+      29      expect(isDaytime('2026-11-12T20:30:00Z', 'Australia/Adelaid
+          e')).toBe(true); // 7:00 AM ACDT
+      29 -    expect(isDaytime('2026-11-12T10:00:00Z', 'Australia/Adelaid
+         -e')).toBe(false); // 8:30 PM → ends 9:30 PM                    
+      30 +    expect(isDaytime('2026-11-12T10:00:00Z', 'Australia/Adelaid
+         +e')).toBe(true); // 8:30 PM → ends 9:30 PM                     
+      31 +    expect(isDaytime('2026-11-12T11:00:00Z', 'Australia/Adelaid
+         +e')).toBe(false); // 9:30 PM → ends 10:30 PM                   
+      32    });
+      33  
+      34    it('respects a different class length', () => {
+      33 -    expect(isDaytime('2026-11-12T20:00:00Z', LONDON, 90)).toBe(
+         -false); // 8:00 PM + 90 min                                    
+      35 +    expect(isDaytime('2026-11-12T21:00:00Z', LONDON)).toBe(true
+         +); // 9:00 PM + 60 min fits                                    
+      36 +    expect(isDaytime('2026-11-12T21:00:00Z', LONDON, 90)).toBe(
+         +false); // 9:00 PM + 90 min doesn't                            
+      37    });
+      38  
+      39    it('is false for an unknown zone rather than throwing', () =>
+           {
+  ⎿  … 1 more file changed
+  ⎿  (timeout 5m)
+
+⏺ All 324 tests pass with unchanged counts, and no stray 9:00 PM references
+  remain. Next I'll rebuild, reseed and retake the screenshots to see the 9 PM
+  slots move into the grid. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Byte-for-byte comparisons aren't a reliable guide here: the outbox embeds the
+  "Sent" time, so it changes on every run. Viewing the ones that matter:
+
+  Read 3 files (ctrl+o to expand)
+
+⏺ The count changed to (8), 9:00 PM now shows as open, and Shot 1 and Shot 3
+  also changed, so I'm replacing all five screenshots and committing the change
+  and the screenshots separately. · summary
+
+⏺ Bash(SCR=/private/tmp/claude-501/-Users-debangichoudhury-Projects-assignment-c
+      odeyoung/73160ce7-afbb-433b-a791-7345507b6d3e/scratchpad/shots && cp
+      $SCR/out/*.png doc…)
+  ⎿  4 files changed (binary, mode only or too large to show)
+
+⏺ The daytime window now ends at 10:00 PM, so 9:00 PM is the last daytime start.
+  All 324 tests pass, and the two commits are local; run git push to update
+  GitHub.
+
+  The change (471ff75)
+  - The constant: DAYTIME_END_HOUR is now 22 in daytime.ts
+    (packages/shared/src/time/daytime.ts). The grid, date strip, toggle and 409
+    alternatives all follow it.
+  - The hint is built from the constant, so it now reads "Times between 7:00 AM
+    and 10:00 PM in your time zone are shown first." without any text change.
+  - Shared tests:
+    - 9:00 PM is now daytime and 10:00 PM is not.
+    - Adelaide's last fitting start is 8:30 PM (9:30 PM is out).
+    - A 9 PM class fits at 60 minutes but not at 90.
+    - Two of these boundary checks flipped, so I moved their inputs to still
+      test the edge rather than just flipping expectations.
+  - Alternatives test: Friday 9 PM New York is back in the top 5 as a daytime
+    alternative. The "night fallback" test now uses Friday 10 PM.
+  - README: the UX note, the alternatives rule and the trade-off row all say
+    7:00 AM–10:00 PM (last start 9:00 PM). Test counts are unchanged, since I
+    only added assertions to existing tests.
+
+  Screenshots (e0bea31): the toggle count did change, so I retook all five.
+
+  ┌────────────┬──────────────────────┬────────────────────────────────────┐
+  │    Shot    │        Before        │                Now                 │
+  ├────────────┼──────────────────────┼────────────────────────────────────┤
+  │ 2 (toggle) │ "(9)", grid ends 8   │ "(8)", 9:00 PM open in the grid,   │
+  │            │ PM                   │ hint says 10:00 PM                 │
+  ├────────────┼──────────────────────┼────────────────────────────────────┤
+  │ 1          │ Fri "7 open", Sun    │ Fri "8 open", Sun "12 open"        │
+  │ (booking)  │ "11 open"            │                                    │
+  ├────────────┼──────────────────────┼────────────────────────────────────┤
+  │ 3–5        │ Sunday 3–8 PM        │ same content, re-rendered with the │
+  │            │ alternatives         │  set                               │
+  └────────────┴──────────────────────┴────────────────────────────────────┘

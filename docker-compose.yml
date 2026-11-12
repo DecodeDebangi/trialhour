@@ -17,7 +17,42 @@ services:
       interval: 2s
       timeout: 3s
       retries: 20
-  # api and web services are added in slice 10 (SPEC.md §12).
+
+  api:
+    build: .
+    # Migrate, then RESET and reseed demo data (wipes bookings), then serve.
+    command: sh -c "npm run db:setup -w @codeyoung/api && npm run start -w @codeyoung/api"
+    environment:
+      DATABASE_URL: postgres://booking:booking@db:5432/booking
+      PORT: '3001'
+      MIN_NOTICE_MINUTES: ${MIN_NOTICE_MINUTES:-240}
+      BOOKING_HORIZON_DAYS: ${BOOKING_HORIZON_DAYS:-14}
+      MENTOR_DAILY_CAP: ${MENTOR_DAILY_CAP:-2}
+      ASSIGNMENT_STRATEGY: ${ASSIGNMENT_STRATEGY:-capacity-preserving}
+      # Optional: freeze "now" for DST demos, e.g. NOW_OVERRIDE=2027-03-13T12:00:00Z
+      NOW_OVERRIDE: ${NOW_OVERRIDE:-}
+    ports:
+      - '${API_PORT:-3001}:3001'
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:3001/api/health || exit 1']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  web:
+    build: .
+    # Serves the production build; /api is proxied to the api service.
+    command: npm run preview -w @codeyoung/web
+    environment:
+      API_URL: http://api:3001
+    ports:
+      - '${WEB_PORT:-5173}:5173'
+    depends_on:
+      api:
+        condition: service_healthy
 
 volumes:
   db-data:

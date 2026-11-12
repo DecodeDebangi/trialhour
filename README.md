@@ -101,14 +101,14 @@ docker compose up -d db   # integration tests need Postgres on :5433
 npm test                  # all workspaces
 ```
 
-**291 tests**, all passing:
+**301 tests**, all passing:
 
 | Workspace | Tests | What they cover |
 |---|---|---|
 | `packages/shared` | 64 | Time formatting, zone validation, local day bounds (23h and 25h days) |
-| `apps/api` unit | 110 | Pure domain logic: slots and shift dates, availability and reasons, booking window, both assignment strategies, alternatives, emails, `.ics`, request fingerprints, the seed planner, config, clock, the booking service (backstop, replay, duplicates, outbox) |
-| `apps/api` integration | 64 | Real Postgres: migrations, seed, slots/booking/outbox/calendar APIs, duplicate trials, idempotency, **concurrency (X1, X2, X3, X5)**, lock timeouts |
-| `apps/web` | 53 | Components and pages (date strip, slot grid, form with alternatives and duplicates, confirmation, outbox) plus pure helpers (phone, zones, days) |
+| `apps/api` unit | 112 | Pure domain logic: slots and shift dates (including a class that spans a DST change), availability and reasons, booking window, both assignment strategies, alternatives, emails, `.ics`, request fingerprints, the seed planner, config, clock, the booking service (backstop, replay, duplicates, outbox) |
+| `apps/api` integration | 66 | Real Postgres: migrations, seed, slots/booking/outbox/calendar APIs, duplicate trials (including one in progress), idempotency, a booking spanning the US clock change, **concurrency (X1, X2, X3, X5)**, lock timeouts |
+| `apps/web` | 59 | Components and pages (date strip, slot grid, form with alternatives and duplicates, confirmation, outbox) plus pure helpers (phone, zones, days, UUIDs). Includes booking on plain http without `crypto.randomUUID`. |
 
 - **Traceable to the spec:** test names carry the IDs from the test matrix in [SPEC.md §11](SPEC.md#11-test-matrix) (T1–T16 for DST and zones, C1–C11 for capacity, X1–X2 for concurrency).
 - **Integration database:** integration tests use a separate `booking_test` database. It's rebuilt from the migrations once per run, and the test files run one at a time.
@@ -123,7 +123,7 @@ All variables are validated with zod at startup ([apps/api/src/config.ts](apps/a
 | `DATABASE_URL` | (required) | Postgres connection string |
 | `PORT` | `3001` | API port |
 | `MIN_NOTICE_MINUTES` | `240` | Minimum notice before a class (see [trade-offs](#assumptions-and-trade-offs)) |
-| `BOOKING_HORIZON_DAYS` | `14` | How far ahead parents can book |
+| `BOOKING_HORIZON_DAYS` | `14` | How far ahead parents can book (1–30) |
 | `MENTOR_DAILY_CAP` | `2` | Classes per mentor per shift |
 | `ASSIGNMENT_STRATEGY` | `capacity-preserving` | Or `fair-load` (see [Mentor assignment](#mentor-assignment)) |
 | `NOW_OVERRIDE` | (unset) | Development only: freeze the clock at an ISO instant with an offset. Refused when `NODE_ENV=production`. |
@@ -194,7 +194,7 @@ MongoDB can do multi-document transactions, but it needs a replica set even loca
 | A4 | **Slots start on the UTC hour** (= :30 India time). | US, UK, Canadian and most Australian parents see whole hours. Adelaide, Darwin and Newfoundland see :30. With all slots on one grid, "busy at this slot" is a simple equality check. Seed validation checks a full year of real dates. |
 | A5 | **Windows stay fixed in India time.** | Mentor schedules don't follow US/UK DST, so on transition dates a slot moves by an hour *for parents*. That's realistic and is what the DST tests verify. |
 | A6 | **Bookable from 4 hours to 14 days ahead** (configurable). | The trial is a marketing funnel: a parent should be able to book while they're interested. The cost is that mentors sometimes get under 4 hours' notice; they see bookings immediately. 12 hours would be the cautious choice. |
-| A7 | **A parent is identified by email + child name** (trimmed, lower-cased, spaces collapsed). | A parent with two kids can book one trial for each. A second *upcoming* trial for the same child is refused with a link to the first. |
+| A7 | **A parent is identified by email + child name** (trimmed, lower-cased, spaces collapsed). | A parent with two kids can book one trial for each. A second trial for the same child is refused, with a link to the first, while the first is upcoming or still in progress (`end_utc > now`). |
 | A8 | **"Now" is injected** everywhere (`Clock`). | Tests and the DST demo run on fixed instants. The server clock is authoritative; the client's clock is never trusted. |
 | A9 | **No auth.** Booking pages use unguessable UUIDs. | Fine for a demo; listed under next steps. The `/outbox` page and `GET /api/outbox` show every demo email, including parent and child names: a reviewer tool that would not exist in production. |
 | — | **No temporary slot holds (no Redis).** | At ~20 bookings/day, a parent losing a slot while filling in the form is rare. It's handled with a friendly 409 and a refreshed list rather than hold/expiry machinery. |
@@ -229,6 +229,7 @@ MongoDB can do multi-document transactions, but it needs a replica set even loca
 | US fall back, **Sun 7 Nov 2027** | New York and Los Angeles move an hour earlier. The day is 25h. The two 1:30 AMs are told apart by offset. |
 | Sydney DST ends **4 Apr 2027** / starts **3 Oct 2027** | 4:00 PM (GMT+11) ↔ 3:00 PM (GMT+10); Brisbane (no DST) stays at GMT+10 |
 | Arizona | Phoenix stays at GMT-7 while Los Angeles changes |
+| A class spanning the US change | The 06:00Z class on 14 Mar 2027 reads 1:00 AM (GMT-5) → 3:00 AM (GMT-4) on New York clocks but is 60 real minutes. `endUtc`, the `.ics` `DTEND` (07:00Z) and the parent email are all checked. |
 
 ## Mentor assignment
 
@@ -331,6 +332,7 @@ Slots grouped by the parent's local date. `tz` is required (IANA). `from` and `t
 ```json
 {
   "timezone": "Europe/London",
+  "policy": { "minNoticeMinutes": 240, "horizonDays": 14, "dailyCap": 2 },
   "days": [
     {
       "date": "2026-11-13",
@@ -343,7 +345,7 @@ Slots grouped by the parent's local date. `tz` is required (IANA). `from` and `t
 }
 ```
 
-`reason` (only when `available` is false), in order of precedence: `TOO_SOON` → `DAILY_LIMIT_REACHED` (every covering mentor at the cap) → `FULLY_BOOKED`.
+`policy` holds the rules in force, so the UI's explanations ("at least 4 hours", "at most 2 trial classes a day") always match the configuration. `reason` (only when `available` is false), in order of precedence: `TOO_SOON` → `DAILY_LIMIT_REACHED` (every covering mentor at the cap) → `FULLY_BOOKED`.
 
 ### `POST /api/bookings`
 

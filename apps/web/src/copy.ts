@@ -52,7 +52,8 @@ export const copy = {
     TOO_SOON: (time: string) => `${time} is now too soon to book.`,
   },
   conflictLead:
-    "Here are the nearest open times. Tap one to book it with the details you've entered.",
+    "Here are the nearest open times. Choose one, then confirm to book it with the details you've entered.",
+  bookThis: (when: string) => `Book ${when}`,
   pickAnother: 'Or pick another time',
   duplicateTrial: (child: string, when: string) => `${child} already has a trial on ${when}.`,
   viewThatBooking: 'View that booking',

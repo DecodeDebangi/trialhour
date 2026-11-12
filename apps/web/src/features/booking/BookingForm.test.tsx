@@ -173,7 +173,7 @@ describe('BookingForm', () => {
     await waitFor(() => expect(props.onUnavailable).toHaveBeenCalled());
   });
 
-  it('409 with alternatives: explains, keeps the form, and books an alternative in one tap', async () => {
+  it('409 with alternatives: explains, keeps the form; tapping selects, a second button confirms', async () => {
     const alternatives = [
       '2026-11-13T17:00:00Z',
       '2026-11-13T15:00:00Z',
@@ -192,7 +192,7 @@ describe('BookingForm', () => {
 
     const panel = await screen.findByRole('alert');
     expect(panel.textContent).toContain('Sorry, 4:00 PM was just taken.');
-    expect(panel.textContent).toContain('Tap one to book it with the details you');
+    expect(panel.textContent).toContain('Choose one, then confirm to book it with the details you');
     const options = within(panel).getAllByRole('button').slice(0, 3);
     expect(options.map((b) => b.textContent)).toEqual([
       'Fri 13 Nov, 5:00 PM London time (GMT+0)',
@@ -203,7 +203,21 @@ describe('BookingForm', () => {
     expect(props.onUnavailable).not.toHaveBeenCalled();
     expect((screen.getByLabelText("Child's first name") as HTMLInputElement).value).toBe('Oliver');
 
+    // Tapping only selects: no booking yet, because a wrong tap can't be undone later.
     fireEvent.click(options[0]!);
+    expect(options[0]!.getAttribute('aria-pressed')).toBe('true');
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: /^Book Fri 13 Nov, 5:00 PM/ })).toBeTruthy();
+
+    // Changing your mind moves the selection and the confirm button.
+    fireEvent.click(options[2]!);
+    expect(options[0]!.getAttribute('aria-pressed')).toBe('false');
+    expect(create).toHaveBeenCalledTimes(1);
+    fireEvent.click(options[0]!);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Book Fri 13 Nov, 5:00 PM London time (GMT+0)' }),
+    );
     await waitFor(() => expect(props.onBooked).toHaveBeenCalled());
     const [firstCall, secondCall] = create.mock.calls;
     expect(secondCall![0]).toEqual({ ...firstCall![0], startUtc: '2026-11-13T17:00:00Z' });

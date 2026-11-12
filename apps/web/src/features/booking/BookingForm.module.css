@@ -222,8 +222,33 @@
   cursor: pointer;
 }
 
+.alternative {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
 .alternative:hover {
   background: var(--primary-soft);
+}
+
+.alternative[aria-pressed='true'] {
+  border-width: 2px;
+  background: var(--primary-soft);
+}
+
+/* Selected state is shown by the filled circle, not colour alone. */
+.radio {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  background: var(--surface);
+}
+
+.alternative[aria-pressed='true'] .radio {
+  background: radial-gradient(circle, var(--primary) 0 45%, var(--surface) 50%);
 }
 
 .alternative:disabled {

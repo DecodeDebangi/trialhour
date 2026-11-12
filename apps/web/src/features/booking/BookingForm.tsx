@@ -70,6 +70,8 @@ export function BookingForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [conflict, setConflict] = useState<Conflict | null>(null);
+  // Picked from the conflict panel but not yet confirmed: no cancelling, so no one-tap booking.
+  const [chosenAlternative, setChosenAlternative] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState<ExistingTrial | null>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
   const conflictRef = useRef<HTMLDivElement>(null);
@@ -144,6 +146,7 @@ export function BookingForm({
       if (!(error instanceof ApiError)) throw error;
       if (error.kind === 'unavailable' && error.alternatives.length > 0) {
         setConflict({ title: conflictTitle(error, startUtc), alternatives: error.alternatives });
+        setChosenAlternative(null);
         onSlotsStale();
         requestAnimationFrame(() => conflictRef.current?.focus());
       } else if (error.kind === 'unavailable') {
@@ -351,14 +354,29 @@ export function BookingForm({
                   <button
                     type="button"
                     className={styles.alternative}
+                    aria-pressed={chosenAlternative === alt.startUtc}
                     disabled={submitting}
-                    onClick={() => void submit(undefined, alt.startUtc)}
+                    onClick={() => setChosenAlternative(alt.startUtc)}
                   >
+                    <span aria-hidden="true" className={styles.radio} />
                     {formatInstant(alt.startUtc, zone)}
                   </button>
                 </li>
               ))}
             </ul>
+            {chosenAlternative && (
+              <button
+                type="button"
+                className={styles.submit}
+                aria-busy={submitting}
+                disabled={submitting}
+                onClick={() => void submit(undefined, chosenAlternative)}
+              >
+                {submitting
+                  ? copy.submitting
+                  : copy.bookThis(formatInstant(chosenAlternative, zone))}
+              </button>
+            )}
             <button type="button" className={styles.linkButton} onClick={onChangeTime}>
               {copy.pickAnother}
             </button>

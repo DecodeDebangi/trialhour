@@ -1,0 +1,21 @@
+{
+  "name": "codeyoung-trial-booking",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.10.1",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: booking
+      POSTGRES_PASSWORD: booking
+      POSTGRES_DB: booking
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - '${DB_PORT:-5433}:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./docker/db-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U booking -d booking']
+      interval: 2s
+      timeout: 3s
+      retries: 20
+  # api and web services are added in slice 10 (SPEC.md §12).
+
+volumes:
+  db-data:

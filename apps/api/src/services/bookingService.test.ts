@@ -12,6 +12,8 @@ import type { BookingRepository, UpcomingTrial } from '../repositories/bookingRe
 import { MentorSlotTakenError, TransientDatabaseError } from '../repositories/errors.js';
 import type { IdempotencyRepository } from '../repositories/idempotencyRepo.js';
 import type { MentorRepository } from '../repositories/mentorRepo.js';
+import type { OutboxRepository } from '../repositories/outboxRepo.js';
+import type { EmailMessage } from '../domain/emails.js';
 import type { RunInTransaction } from '../repositories/transaction.js';
 import { M1 } from '../../test/fixtures/schedules.js';
 import { BookingService, DEFAULT_TRANSACTION_OPTIONS } from './bookingService.js';
@@ -32,7 +34,7 @@ interface FakeOptions {
   claim?: boolean;
   stored?: { requestHash: string; responseBody: unknown };
   upcoming?: UpcomingTrial | null;
-  seen?: { options?: unknown };
+  seen?: { options?: unknown; emails?: readonly EmailMessage[] };
 }
 
 /** In-memory repositories around one UK-evening mentor (M1). */
@@ -55,9 +57,15 @@ function service(opts: FakeOptions = {}) {
     complete: async () => {},
     find: async () => (opts.stored ? { ...opts.stored, responseStatus: 201 } : null),
   };
+  const outbox: OutboxRepository = {
+    insert: async (_bookingId, messages) => {
+      if (opts.seen) opts.seen.emails = messages;
+    },
+    list: async () => [],
+  };
   const runInTransaction: RunInTransaction = (options, fn) => {
     if (opts.seen) opts.seen.options = options;
-    return fn({ mentors, bookings, idempotency });
+    return fn({ mentors, bookings, idempotency, outbox });
   };
   return new BookingService({
     runInTransaction,
@@ -109,6 +117,19 @@ describe('BookingService: backstop and timeouts', () => {
   });
 });
 
+describe('BookingService: outbox', () => {
+  it('X6: writes the parent and mentor emails inside the booking transaction', async () => {
+    const seen: { emails?: readonly EmailMessage[] } = {};
+    await service({ seen }).createBooking(request, KEY);
+    expect(seen.emails?.map((e) => [e.recipient, e.to])).toEqual([
+      ['parent', 'emma@example.com'],
+      ['mentor', 'a@x'],
+    ]);
+    expect(seen.emails![0]!.body).toContain('When: Sat 27 Mar, 3:00 PM London time (GMT+0)');
+    expect(seen.emails![1]!.body).toContain('When: Sat 27 Mar, 8:30 PM India time (GMT+5:30)');
+  });
+});
+
 describe('BookingService: idempotency and duplicates', () => {
   it('a taken key with the same request replays the stored response', async () => {
     const body = {
@@ -124,12 +145,36 @@ describe('BookingService: idempotency and duplicates', () => {
         timezone: 'Asia/Kolkata',
       },
       classLink: 'https://class.example.com/trial/6f1c2b1e-0000-4000-8000-000000000001',
+      icsUrl: '/api/bookings/6f1c2b1e-0000-4000-8000-000000000001/calendar.ics',
     };
     const svc = service({
       claim: false,
       stored: { requestHash: requestFingerprint(request), responseBody: body },
     });
     expect(await svc.createBooking(request, KEY)).toEqual({ booking: body, replayed: true });
+  });
+
+  it('replays a response stored before icsUrl existed, deriving the icsUrl', async () => {
+    const legacy = {
+      id: '6f1c2b1e-0000-4000-8000-000000000002',
+      startUtc: request.startUtc,
+      endUtc: '2027-03-27T16:00:00Z',
+      parentTimezone: request.parentTimezone,
+      parent: { name: request.parentName, email: request.parentEmail },
+      child: { name: request.childName, grade: request.childGrade },
+      mentor: {
+        id: '00000000-0000-4000-8000-000000000001',
+        name: 'Ananya Iyer',
+        timezone: 'Asia/Kolkata',
+      },
+      classLink: 'https://class.example.com/trial/6f1c2b1e-0000-4000-8000-000000000002',
+    };
+    const svc = service({
+      claim: false,
+      stored: { requestHash: requestFingerprint(request), responseBody: legacy },
+    });
+    const { booking } = await svc.createBooking(request, KEY);
+    expect(booking.icsUrl).toBe('/api/bookings/6f1c2b1e-0000-4000-8000-000000000002/calendar.ics');
   });
 
   it('a taken key with a different request → IdempotencyKeyReusedError', async () => {

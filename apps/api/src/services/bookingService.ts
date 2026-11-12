@@ -10,7 +10,9 @@ import type { Clock } from '../clock.js';
 import { MAX_ALTERNATIVES, nearestAlternatives } from '../domain/alternatives.js';
 import { toMentorStates, type AssignmentStrategy } from '../domain/assignment/index.js';
 import { assessSlot, computeAvailability, indexBookings } from '../domain/availability.js';
+import { buildIcs } from '../domain/calendar.js';
 import { classLinkFor } from '../domain/classLink.js';
+import { composeBookingEmails } from '../domain/emails.js';
 import {
   BookingNotFoundError,
   DuplicateTrialError,
@@ -164,6 +166,21 @@ export class BookingService {
             childNameNorm: childNorm,
             phone: request.phone ?? null,
           });
+          // Same transaction: the emails exist if and only if the booking does.
+          await tx.outbox.insert(
+            id,
+            composeBookingEmails({
+              startUtc: chosen.startUtc,
+              parent: {
+                name: request.parentName,
+                email: request.parentEmail,
+                timezone: request.parentTimezone,
+              },
+              child: { name: request.childName, grade: request.childGrade },
+              mentor: { name: mentor.name, email: mentor.email, timezone: mentor.timezone },
+              classLink: details.classLink,
+            }),
+          );
           const response = toResponse(details);
           await tx.idempotency.complete(idempotencyKey, id, 201, response);
           return response;
@@ -190,11 +207,31 @@ export class BookingService {
     return toResponse(booking);
   }
 
+  /** The parent's calendar file for a booking. */
+  async getCalendar(id: string): Promise<string> {
+    const b = await this.deps.bookings.findById(id);
+    if (!b) throw new BookingNotFoundError(id);
+    return buildIcs(
+      {
+        id: b.id,
+        startUtc: b.startUtc,
+        endUtc: b.endUtc,
+        childName: b.childName,
+        mentorName: b.mentor.name,
+        classLink: b.classLink,
+      },
+      this.deps.clock.now(),
+    );
+  }
+
   /** The key's transaction committed: same request → replay its response; different → 422. */
   private async replay(key: string, requestHash: string): Promise<BookingResult> {
     const stored = await this.deps.idempotency.find(key);
     if (!stored || stored.requestHash !== requestHash) throw new IdempotencyKeyReusedError();
-    return { booking: bookingResponseSchema.parse(stored.responseBody), replayed: true };
+    const body = stored.responseBody as { id?: string };
+    // Responses stored before icsUrl existed get it derived, so old keys still replay.
+    const withIcs = { icsUrl: icsUrlFor(body.id ?? ''), ...body };
+    return { booking: bookingResponseSchema.parse(withIcs), replayed: true };
   }
 
   /**
@@ -236,5 +273,10 @@ function toResponse(b: BookingDetails): BookingResponse {
     child: { name: b.childName, grade: b.childGrade },
     mentor: b.mentor,
     classLink: b.classLink,
+    icsUrl: icsUrlFor(b.id),
   };
+}
+
+function icsUrlFor(bookingId: string): string {
+  return `/api/bookings/${bookingId}/calendar.ics`;
 }

@@ -36,12 +36,14 @@ describe('seed', () => {
     const counts = await pool.query(`
       SELECT (SELECT count(*) FROM mentors)::int AS mentors,
              (SELECT count(*) FROM availability_windows)::int AS windows,
-             (SELECT count(*) FROM bookings)::int AS bookings`);
+             (SELECT count(*) FROM bookings)::int AS bookings,
+             (SELECT count(*) FROM outbox_messages)::int AS emails`);
     const windowCount = SEED_MENTORS.reduce((n, m) => n + m.windows.length, 0);
     expect(counts.rows[0]).toEqual({
       mentors: 10,
       windows: windowCount,
       bookings: SEED_BOOKINGS.length,
+      emails: SEED_BOOKINGS.length * 2, // a parent and a mentor email per demo booking
     });
   });
 

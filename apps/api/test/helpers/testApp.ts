@@ -16,11 +16,13 @@ import { scheduleOf } from '../../src/db/seed.js';
 import { createBookingRepository, insertBooking } from '../../src/repositories/bookingRepo.js';
 import { createIdempotencyRepository } from '../../src/repositories/idempotencyRepo.js';
 import { createMentorRepository } from '../../src/repositories/mentorRepo.js';
+import { createOutboxRepository } from '../../src/repositories/outboxRepo.js';
 import {
   createTransactionRunner,
   type TransactionOptions,
 } from '../../src/repositories/transaction.js';
 import { BookingService } from '../../src/services/bookingService.js';
+import { OutboxService } from '../../src/services/outboxService.js';
 import { SlotService } from '../../src/services/slotService.js';
 
 export const TEST_POLICY: BookingPolicy = { minNoticeMinutes: 240, horizonDays: 14, dailyCap: 2 };
@@ -59,6 +61,7 @@ export async function seededApp(
   const app = createApp({
     slotService,
     bookingService,
+    outboxService: new OutboxService({ outbox: createOutboxRepository(pool) }),
     checkDatabase: async () => {
       await pool.query('SELECT 1');
     },

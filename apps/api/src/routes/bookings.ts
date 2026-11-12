@@ -22,6 +22,15 @@ export function bookingsRouter(bookingService: BookingService): Router {
     res.status(replayed ? 200 : 201).json(booking);
   });
 
+  router.get('/:id/calendar.ics', async (req, res) => {
+    const { id } = idParamSchema.parse(req.params);
+    const ics = await bookingService.getCalendar(id);
+    res
+      .type('text/calendar; charset=utf-8')
+      .set('Content-Disposition', 'attachment; filename="trial-class.ics"')
+      .send(ics);
+  });
+
   router.get('/:id', async (req, res) => {
     const { id } = idParamSchema.parse(req.params);
     res.json(await bookingService.getBooking(id));

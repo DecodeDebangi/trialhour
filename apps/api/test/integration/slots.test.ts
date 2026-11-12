@@ -149,6 +149,7 @@ describe('GET /api/health and unknown routes', () => {
     const app = createApp({
       slotService: undefined as never,
       bookingService: undefined as never,
+      outboxService: undefined as never,
       checkDatabase: () => Promise.reject(new Error('down')),
     });
     const res = await request(app).get('/api/health');

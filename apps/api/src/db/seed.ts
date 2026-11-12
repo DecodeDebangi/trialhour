@@ -2,11 +2,13 @@ import { randomUUID } from 'node:crypto';
 import { DateTime } from 'luxon';
 import { eligibleMentorSlots, indexBookings } from '../domain/availability.js';
 import { classLinkFor } from '../domain/classLink.js';
+import { composeBookingEmails } from '../domain/emails.js';
 import { normalizeIdentityPart } from '../domain/parentIdentity.js';
 import { assertValidSchedule, mentorSlotAt, slotsForWindow } from '../domain/slots.js';
 import type { BookedSlot, MentorSchedule } from '../domain/types.js';
 import { insertBooking, type NewBooking } from '../repositories/bookingRepo.js';
 import { insertMentor } from '../repositories/mentorRepo.js';
+import { createOutboxRepository } from '../repositories/outboxRepo.js';
 import type { Pool } from './pool.js';
 import { SEED_BOOKINGS, SEED_MENTORS, type SeedBooking, type SeedMentor } from './seedData.js';
 import { withTransaction } from './tx.js';
@@ -98,7 +100,25 @@ export async function seed(
       'TRUNCATE outbox_messages, idempotency_keys, bookings, availability_windows, mentors',
     );
     for (const mentor of SEED_MENTORS) await insertMentor(client, mentor, scheduleOf(mentor));
-    for (const booking of bookings) await insertBooking(client, booking);
+    const outbox = createOutboxRepository(client);
+    for (const booking of bookings) {
+      await insertBooking(client, booking);
+      const mentor = SEED_MENTORS.find((m) => m.id === booking.mentorId)!;
+      await outbox.insert(
+        booking.id,
+        composeBookingEmails({
+          startUtc: booking.startUtc,
+          parent: {
+            name: booking.parentName,
+            email: booking.parentEmail,
+            timezone: booking.parentTimezone,
+          },
+          child: { name: booking.childName, grade: booking.childGrade },
+          mentor: { name: mentor.name, email: mentor.email, timezone: mentor.timezone },
+          classLink: booking.classLink,
+        }),
+      );
+    }
   });
   return { mentors: SEED_MENTORS.length, bookings: bookings.length };
 }

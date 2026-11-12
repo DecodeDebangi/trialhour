@@ -4,11 +4,13 @@ import { createBookingRepository, type BookingRepository } from './bookingRepo.j
 import { TransientDatabaseError, pgErrorCode } from './errors.js';
 import { createIdempotencyRepository, type IdempotencyRepository } from './idempotencyRepo.js';
 import { createMentorRepository, type MentorRepository } from './mentorRepo.js';
+import { createOutboxRepository, type OutboxRepository } from './outboxRepo.js';
 
 export interface TransactionRepositories {
   mentors: MentorRepository;
   bookings: BookingRepository;
   idempotency: IdempotencyRepository;
+  outbox: OutboxRepository;
 }
 
 export interface TransactionOptions {
@@ -40,6 +42,7 @@ export function createTransactionRunner(pool: Pool): RunInTransaction {
           mentors: createMentorRepository(client),
           bookings: createBookingRepository(client),
           idempotency: createIdempotencyRepository(client),
+          outbox: createOutboxRepository(client),
         });
       });
     } catch (error) {

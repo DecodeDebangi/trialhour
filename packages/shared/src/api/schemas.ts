@@ -76,6 +76,8 @@ export const bookingResponseSchema = z.object({
   child: z.object({ name: z.string(), grade: z.number() }),
   mentor: z.object({ id: z.uuid(), name: z.string(), timezone: z.string() }),
   classLink: z.url(),
+  /** Relative URL of the booking's calendar file. */
+  icsUrl: z.string().startsWith('/api/bookings/'),
 });
 export type BookingResponse = z.infer<typeof bookingResponseSchema>;
 
@@ -95,3 +97,33 @@ export const duplicateTrialResponseSchema = errorResponseSchema.extend({
   }),
 });
 export type DuplicateTrialResponse = z.infer<typeof duplicateTrialResponseSchema>;
+
+export const outboxQuerySchema = z.object({
+  bookingId: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
+export type OutboxQuery = z.infer<typeof outboxQuerySchema>;
+
+export const outboxMessageSchema = z.object({
+  to: z.string(),
+  subject: z.string(),
+  body: z.string(),
+});
+export type OutboxMessageDto = z.infer<typeof outboxMessageSchema>;
+
+/** One booking's two emails, side by side: the parent's and the mentor's. */
+export const outboxEntrySchema = z.object({
+  bookingId: z.uuid(),
+  startUtc: z.iso.datetime(),
+  childName: z.string(),
+  mentorName: z.string(),
+  parentTimezone: z.string(),
+  mentorTimezone: z.string(),
+  sentAt: z.iso.datetime(),
+  parent: outboxMessageSchema,
+  mentor: outboxMessageSchema,
+});
+export type OutboxEntry = z.infer<typeof outboxEntrySchema>;
+
+export const outboxResponseSchema = z.object({ entries: z.array(outboxEntrySchema) });
+export type OutboxResponse = z.infer<typeof outboxResponseSchema>;

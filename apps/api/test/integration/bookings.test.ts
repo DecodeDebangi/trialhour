@@ -5,6 +5,7 @@ import type { Express } from 'express';
 import {
   bookingResponseSchema,
   duplicateTrialResponseSchema,
+  outboxResponseSchema,
   slotUnavailableResponseSchema,
 } from '@codeyoung/shared';
 import { createBookingRepository } from '../../src/repositories/bookingRepo.js';
@@ -248,6 +249,95 @@ describe('POST /api/bookings — idempotency', () => {
     expect((await post(app, bookingBody(UK(16)), idem)).status).toBe(409);
     await pool.query('DELETE FROM bookings WHERE start_utc = $1', [UK(16)]);
     expect((await post(app, bookingBody(UK(16)), idem)).status).toBe(201);
+  });
+});
+
+describe('outbox and calendar (X6)', () => {
+  const outboxFor = (id: string) =>
+    pool.query<{ recipient: string; to_email: string; subject: string; body_text: string }>(
+      'SELECT recipient, to_email, subject, body_text FROM outbox_messages WHERE booking_id = $1 ORDER BY recipient DESC',
+      [id],
+    );
+
+  it('X6: every 201 writes exactly 2 emails: parent in their zone, mentor in India time + parent time', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const res = await post(
+      app,
+      bookingBody(UK(15), { parentTimezone: 'America/New_York', parentEmail: 'ny@example.com' }),
+    );
+    expect(res.status).toBe(201);
+    const { rows } = await outboxFor(res.body.id);
+    expect(rows.map((r) => [r.recipient, r.to_email])).toEqual([
+      ['parent', 'ny@example.com'],
+      ['mentor', `${res.body.mentor.name.split(' ')[0].toLowerCase()}@mentors.example.com`],
+    ]);
+    // 15:00Z on Sat 27 Mar 2027: New York is already on DST (GMT-4); India is 20:30.
+    expect(rows[0]!.body_text).toContain('When: Sat 27 Mar, 11:00 AM New York time (GMT-4)');
+    expect(rows[1]!.body_text).toContain('When: Sat 27 Mar, 8:30 PM India time (GMT+5:30)');
+    expect(rows[1]!.body_text).toContain(
+      "Parent's time: Sat 27 Mar, 11:00 AM New York time (GMT-4)",
+    );
+  });
+
+  it('X6: a 409 writes no emails, and an idempotent replay writes no extra ones', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const count = async () =>
+      (await pool.query('SELECT count(*)::int AS n FROM outbox_messages')).rows[0].n as number;
+    const before = await count();
+
+    for (const key of ['M1', 'M2', 'M3']) await bookDirect(pool, key, UK(16));
+    expect((await post(app, bookingBody(UK(16)))).status).toBe(409);
+    expect(await count()).toBe(before);
+
+    const idem = crypto.randomUUID();
+    expect((await post(app, bookingBody(UK(17)), idem)).status).toBe(201);
+    expect((await post(app, bookingBody(UK(17)), idem)).status).toBe(200);
+    expect(await count()).toBe(before + 2);
+  });
+
+  it('GET /api/bookings/:id/calendar.ics returns an attachment with UTC times', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const created = await post(app, bookingBody(UK(15)));
+    expect(created.body.icsUrl).toBe(`/api/bookings/${created.body.id}/calendar.ics`);
+    const res = await request(app).get(created.body.icsUrl);
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toBe('text/calendar; charset=utf-8');
+    expect(res.headers['content-disposition']).toBe('attachment; filename="trial-class.ics"');
+    const text = res.text.replace(/\r\n /g, '');
+    expect(text).toContain('DTSTART:20270327T150000Z');
+    expect(text).toContain('DTEND:20270327T160000Z');
+    expect(text).toContain(`UID:${created.body.id}@trialhour.example.com`);
+    expect(
+      (await request(app).get('/api/bookings/6f1c2b1e-0000-4000-8000-000000000999/calendar.ics'))
+        .status,
+    ).toBe(404);
+  });
+});
+
+describe('GET /api/outbox', () => {
+  it('lists the seeded bookings’ emails, newest first, each as a parent + mentor pair', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const res = await request(app).get('/api/outbox');
+    expect(res.status).toBe(200);
+    const { entries } = outboxResponseSchema.parse(res.body);
+    expect(entries).toHaveLength(11); // one pair per seeded booking
+    const emma = entries.find((e) => e.parent.to === 'emma.clarke@example.com')!;
+    expect(emma.parentTimezone).toBe('Europe/London');
+    expect(emma.mentorTimezone).toBe('Asia/Kolkata');
+    expect(emma.mentor.subject).toMatch(/^New trial class: .* India time \(GMT\+5:30\)$/);
+  });
+
+  it('filters to one booking, and puts a new booking first', async () => {
+    const { app } = await seededApp(pool, NOW);
+    const created = await post(app, bookingBody(UK(15)));
+    const all = outboxResponseSchema.parse((await request(app).get('/api/outbox')).body);
+    expect(all.entries[0]!.bookingId).toBe(created.body.id);
+
+    const one = await request(app).get('/api/outbox').query({ bookingId: created.body.id });
+    expect(outboxResponseSchema.parse(one.body).entries.map((e) => e.bookingId)).toEqual([
+      created.body.id,
+    ]);
+    expect((await request(app).get('/api/outbox').query({ bookingId: 'nope' })).status).toBe(422);
   });
 });
 

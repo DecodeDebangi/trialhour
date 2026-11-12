@@ -6,9 +6,11 @@ import { createPool } from './db/pool.js';
 import { createBookingRepository } from './repositories/bookingRepo.js';
 import { createIdempotencyRepository } from './repositories/idempotencyRepo.js';
 import { createMentorRepository } from './repositories/mentorRepo.js';
+import { createOutboxRepository } from './repositories/outboxRepo.js';
 import { createTransactionRunner } from './repositories/transaction.js';
 import { createAssignmentStrategy } from './domain/assignment/index.js';
 import { BookingService } from './services/bookingService.js';
+import { OutboxService } from './services/outboxService.js';
 import { SlotService } from './services/slotService.js';
 
 const config = loadConfig(process.env);
@@ -40,6 +42,7 @@ const bookingService = new BookingService({
 const app = createApp({
   slotService,
   bookingService,
+  outboxService: new OutboxService({ outbox: createOutboxRepository(pool) }),
   checkDatabase: async () => {
     await pool.query('SELECT 1');
   },

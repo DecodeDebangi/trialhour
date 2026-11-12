@@ -74,9 +74,10 @@ async function gatedRace(url: string, starts: string[]) {
 
 const statuses = (results: Result[]) => results.map((r) => r.status).sort();
 
-/** Idempotency rows reference bookings, so clear them first. */
+/** Idempotency and outbox rows reference bookings, so clear them first. */
 async function clearBookings(sql: string, params: unknown[] = []) {
   await admin.query('DELETE FROM idempotency_keys');
+  await admin.query('DELETE FROM outbox_messages');
   await admin.query(sql, params);
 }
 

@@ -5,7 +5,10 @@ import type { BookingResponse } from '@codeyoung/shared';
 import { ApiError, api } from '../api/client.js';
 import { ConfirmationPage } from './ConfirmationPage.js';
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  delete (document as { execCommand?: unknown }).execCommand; // back to jsdom's own
+});
 
 const booking: BookingResponse = {
   id: '6f1c2b1e-0000-4000-8000-000000000001',
@@ -26,6 +29,11 @@ const booking: BookingResponse = {
 function HomeProbe() {
   const state = useLocation().state as { prefill?: unknown } | null;
   return <p>home {JSON.stringify(state?.prefill)}</p>;
+}
+
+/** The page focuses its heading once the booking has loaded; interact only after that. */
+async function pageSettled() {
+  await waitFor(() => expect(document.activeElement?.id).toBe('booked-title'));
 }
 
 function renderAt(state?: unknown) {
@@ -97,14 +105,40 @@ describe('ConfirmationPage', () => {
     expect(writeText).toHaveBeenCalledWith(booking.classLink);
   });
 
-  it('falls back to selecting the link when the clipboard is refused', async () => {
+  it('plain http (no navigator.clipboard): copies via execCommand on a temporary textarea', async () => {
+    vi.spyOn(api, 'getBooking').mockResolvedValue(booking);
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+    let copiedText = '';
+    const execCommand = vi.fn((command: string) => {
+      // What the browser would copy: the current selection in the focused element.
+      const el = document.activeElement as HTMLTextAreaElement;
+      copiedText = el.value.slice(el.selectionStart, el.selectionEnd);
+      return command === 'copy';
+    });
+    Object.defineProperty(document, 'execCommand', { value: execCommand, configurable: true });
+    renderAt();
+    await pageSettled();
+    const button = screen.getByRole('button', { name: 'Copy link' });
+    button.focus();
+    fireEvent.click(button);
+
+    await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Link copied'));
+    expect(execCommand).toHaveBeenCalledWith('copy');
+    expect(copiedText).toBe(booking.classLink);
+    expect(document.querySelector('textarea')).toBeNull(); // cleaned up
+    expect(document.activeElement).toBe(button); // focus returned
+  });
+
+  it('when both copy methods fail, selects the link so the parent can copy it', async () => {
     vi.spyOn(api, 'getBooking').mockResolvedValue(booking);
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
       configurable: true,
     });
+    Object.defineProperty(document, 'execCommand', { value: () => false, configurable: true });
     renderAt();
-    fireEvent.click(await screen.findByRole('button', { name: 'Copy link' }));
+    await pageSettled();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
     await waitFor(() => expect(screen.getByRole('status').textContent).toMatch(/selected/));
     expect(document.activeElement).toBe(screen.getByLabelText('Class link'));
   });

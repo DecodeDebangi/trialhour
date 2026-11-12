@@ -1,24 +1,26 @@
 import { useRef, useState } from 'react';
 import { copy } from '../../copy.js';
+import { copyText } from '../../lib/clipboard.js';
 import styles from './Confirmation.module.css';
 
 type State = 'idle' | 'copied' | 'failed';
 
-/** Copies the link; if the Clipboard API is missing or refused, selects the text instead. */
+/**
+ * Copies the link: Clipboard API, then the execCommand fallback (plain http), and only if both
+ * fail, selects the link so the parent can copy it themselves.
+ */
 export function CopyLinkButton({ link }: { link: string }) {
   const [state, setState] = useState<State>('idle');
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function copyLink() {
-    try {
-      if (!navigator.clipboard) throw new Error('Clipboard API unavailable');
-      await navigator.clipboard.writeText(link);
+    if (await copyText(link)) {
       setState('copied');
-    } catch {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-      setState('failed');
+      return;
     }
+    inputRef.current?.focus();
+    inputRef.current?.select();
+    setState('failed');
   }
 
   return (

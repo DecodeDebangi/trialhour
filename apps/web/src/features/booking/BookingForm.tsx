@@ -1,12 +1,15 @@
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { useId, useRef, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import {
   bookingRequestSchema,
+  formatDate,
   formatInstant,
+  formatTime,
   type BookingRequest,
   type BookingResponse,
   type SlotDto,
 } from '@codeyoung/shared';
-import { ApiError, api } from '../../api/client.js';
+import { ApiError, api, type Alternative, type ExistingTrial } from '../../api/client.js';
 import { copy } from '../../copy.js';
 import { DIAL_CODES, dialCodeForZone, toE164 } from '../../lib/phone.js';
 import { Notice } from '../../components/Notice.js';
@@ -32,9 +35,16 @@ interface BookingFormProps {
   zone: string;
   prefill?: ParentPrefill;
   onBooked: (booking: BookingResponse) => void;
-  /** The slot was taken (or became too soon) while the parent filled in the form. */
+  /** The slot was taken while the parent filled in the form and there's nothing to offer. */
   onUnavailable: (error: ApiError) => void;
+  /** Availability changed (a 409 happened); the page should refresh its slots. */
+  onSlotsStale: () => void;
   onChangeTime: () => void;
+}
+
+interface Conflict {
+  title: string;
+  alternatives: readonly Alternative[];
 }
 
 export function BookingForm({
@@ -43,6 +53,7 @@ export function BookingForm({
   prefill,
   onBooked,
   onUnavailable,
+  onSlotsStale,
   onChangeTime,
 }: BookingFormProps) {
   const id = useId();
@@ -58,23 +69,34 @@ export function BookingForm({
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [conflict, setConflict] = useState<Conflict | null>(null);
+  const [duplicate, setDuplicate] = useState<ExistingTrial | null>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
-  // One key per attempt at this slot: a retry after a network error reuses it (safe to repeat).
-  const idempotencyKey = useRef(crypto.randomUUID());
+  const conflictRef = useRef<HTMLDivElement>(null);
+  // Same payload → same Idempotency-Key, so "Try again" after a network error is safe to repeat.
+  // Any change (another time, edited details) gets a fresh key.
+  const lastAttempt = useRef<{ payload: string; key: string } | null>(null);
 
-  useEffect(() => {
-    idempotencyKey.current = crypto.randomUUID();
-  }, [slot.startUtc]);
+  function keyFor(request: BookingRequest): string {
+    const payload = JSON.stringify(request);
+    if (lastAttempt.current?.payload !== payload) {
+      lastAttempt.current = { payload, key: crypto.randomUUID() };
+    }
+    return lastAttempt.current.key;
+  }
 
   const set = (key: keyof typeof values) => (e: { target: { value: string } }) =>
     setValues((v) => ({ ...v, [key]: e.target.value }));
 
-  function validate(): { request?: BookingRequest; errors: Partial<Record<Field, string>> } {
+  function validate(startUtc: string): {
+    request?: BookingRequest;
+    errors: Partial<Record<Field, string>>;
+  } {
     const found: Partial<Record<Field, string>> = {};
     const phone = toE164(dial, values.phoneLocal);
     if (!phone.ok) found.phone = copy.fieldErrors.phone;
     const parsed = bookingRequestSchema.safeParse({
-      startUtc: slot.startUtc,
+      startUtc,
       parentTimezone: zone,
       childName: values.childName,
       childGrade: values.childGrade ? Number(values.childGrade) : undefined,
@@ -93,10 +115,23 @@ export function BookingForm({
       : { errors: found };
   }
 
-  async function submit(e?: FormEvent) {
+  function conflictTitle(error: ApiError, startUtc: string): string {
+    switch (error.reason) {
+      case 'DAILY_LIMIT_REACHED':
+        return copy.conflictTitle.DAILY_LIMIT_REACHED(formatDate(startUtc, zone));
+      case 'TOO_SOON':
+        return copy.conflictTitle.TOO_SOON(formatTime(startUtc, zone));
+      default:
+        return copy.conflictTitle.FULLY_BOOKED(formatTime(startUtc, zone));
+    }
+  }
+
+  /** Submits for the chosen slot, or for an alternative picked from the conflict panel. */
+  async function submit(e?: FormEvent, startUtc: string = slot.startUtc) {
     e?.preventDefault();
     setFormError(null);
-    const { request, errors: found } = validate();
+    setDuplicate(null);
+    const { request, errors: found } = validate(startUtc);
     setErrors(found);
     if (!request) {
       requestAnimationFrame(() => summaryRef.current?.focus());
@@ -104,11 +139,18 @@ export function BookingForm({
     }
     setSubmitting(true);
     try {
-      onBooked(await api.createBooking(request, idempotencyKey.current));
+      onBooked(await api.createBooking(request, keyFor(request)));
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
-      if (error.kind === 'unavailable') {
+      if (error.kind === 'unavailable' && error.alternatives.length > 0) {
+        setConflict({ title: conflictTitle(error, startUtc), alternatives: error.alternatives });
+        onSlotsStale();
+        requestAnimationFrame(() => conflictRef.current?.focus());
+      } else if (error.kind === 'unavailable') {
         onUnavailable(error);
+      } else if (error.kind === 'duplicate' && error.existingBooking) {
+        setConflict(null);
+        setDuplicate(error.existingBooking);
       } else if (error.kind === 'validation') {
         const serverErrors: Partial<Record<Field, string>> = {};
         for (const [path, message] of Object.entries(error.fieldErrors)) {
@@ -298,6 +340,44 @@ export function BookingForm({
           </div>
           {errorText('phone')}
         </fieldset>
+
+        {conflict && (
+          <div className={styles.conflict} role="alert" tabIndex={-1} ref={conflictRef}>
+            <h3 className={styles.conflictTitle}>{conflict.title}</h3>
+            <p className={styles.conflictLead}>{copy.conflictLead}</p>
+            <ul className={styles.alternatives}>
+              {conflict.alternatives.map((alt) => (
+                <li key={alt.startUtc}>
+                  <button
+                    type="button"
+                    className={styles.alternative}
+                    disabled={submitting}
+                    onClick={() => void submit(undefined, alt.startUtc)}
+                  >
+                    {formatInstant(alt.startUtc, zone)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button type="button" className={styles.linkButton} onClick={onChangeTime}>
+              {copy.pickAnother}
+            </button>
+          </div>
+        )}
+
+        {duplicate && (
+          <div className={styles.duplicate} role="alert">
+            <p>
+              <strong>
+                {copy.duplicateTrial(duplicate.childName, formatInstant(duplicate.startUtc, zone))}
+              </strong>
+            </p>
+            <p>
+              <Link to={`/bookings/${duplicate.id}`}>{copy.viewThatBooking}</Link>
+            </p>
+            <p className={styles.hint}>{copy.duplicateHint}</p>
+          </div>
+        )}
 
         {formError && (
           <Notice

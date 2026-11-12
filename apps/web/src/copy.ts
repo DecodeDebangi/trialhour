@@ -45,6 +45,19 @@ export const copy = {
   slotJustTaken: (time: string) =>
     `Sorry, someone booked ${time} a moment ago. We've refreshed the times; please pick another.`,
 
+  conflictTitle: {
+    FULLY_BOOKED: (time: string) => `Sorry, ${time} was just taken.`,
+    DAILY_LIMIT_REACHED: (date: string) =>
+      `Our mentors just reached their class limit for ${date}.`,
+    TOO_SOON: (time: string) => `${time} is now too soon to book.`,
+  },
+  conflictLead:
+    "Here are the nearest open times. Tap one to book it with the details you've entered.",
+  pickAnother: 'Or pick another time',
+  duplicateTrial: (child: string, when: string) => `${child} already has a trial on ${when}.`,
+  viewThatBooking: 'View that booking',
+  duplicateHint: "Booking for a different child? Change the child's name above.",
+
   summaryLabel: 'Your free class',
   changeTime: 'Change time',
   continueWith: (time: string) => `Continue with ${time}`,

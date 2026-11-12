@@ -10,7 +10,19 @@ import type { z } from 'zod';
 import { copy } from '../copy.js';
 
 export type ApiErrorKind =
-  'validation' | 'unavailable' | 'busy' | 'not-found' | 'network' | 'server';
+  'validation' | 'unavailable' | 'duplicate' | 'busy' | 'not-found' | 'network' | 'server';
+
+export interface Alternative {
+  startUtc: string;
+  endUtc: string;
+}
+
+export interface ExistingTrial {
+  id: string;
+  startUtc: string;
+  endUtc: string;
+  childName: string;
+}
 
 /** Every failed API call becomes one of these; components switch on `kind`, never on status. */
 export class ApiError extends Error {
@@ -19,6 +31,10 @@ export class ApiError extends Error {
     message: string,
     readonly fieldErrors: Readonly<Record<string, string>> = {},
     readonly reason?: UnavailableReason,
+    /** 409 SLOT_UNAVAILABLE: nearest open times (may be empty). */
+    readonly alternatives: readonly Alternative[] = [],
+    /** 409 DUPLICATE_TRIAL: the child's existing upcoming trial. */
+    readonly existingBooking?: ExistingTrial,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -26,7 +42,9 @@ export class ApiError extends Error {
 }
 
 interface ErrorBody {
-  error?: { message?: string; details?: unknown };
+  error?: { code?: string; message?: string; details?: unknown };
+  alternatives?: Alternative[];
+  existingBooking?: ExistingTrial;
 }
 
 function toApiError(status: number, body: ErrorBody | null): ApiError {
@@ -41,9 +59,12 @@ function toApiError(status: number, body: ErrorBody | null): ApiError {
     }
     return new ApiError('validation', message, fieldErrors);
   }
+  if (status === 409 && body?.error?.code === 'DUPLICATE_TRIAL' && body.existingBooking) {
+    return new ApiError('duplicate', message, {}, undefined, [], body.existingBooking);
+  }
   if (status === 409) {
     const reason = (details as { reason?: UnavailableReason } | undefined)?.reason;
-    return new ApiError('unavailable', message, {}, reason);
+    return new ApiError('unavailable', message, {}, reason, body?.alternatives ?? []);
   }
   if (status === 404) return new ApiError('not-found', message);
   if (status === 503) return new ApiError('busy', copy.busyError);

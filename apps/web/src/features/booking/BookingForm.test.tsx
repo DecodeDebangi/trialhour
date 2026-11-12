@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { description } from '../../testUtils.js';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { ApiError, api } from '../../api/client.js';
 import { BookingForm } from './BookingForm.js';
 import { slot } from '../../testFixtures.js';
@@ -16,10 +17,15 @@ function renderForm(overrides: Partial<Parameters<typeof BookingForm>[0]> = {}) 
     zone: LONDON,
     onBooked: vi.fn(),
     onUnavailable: vi.fn(),
+    onSlotsStale: vi.fn(),
     onChangeTime: vi.fn(),
     ...overrides,
   };
-  render(<BookingForm {...props} />);
+  render(
+    <MemoryRouter>
+      <BookingForm {...props} />
+    </MemoryRouter>,
+  );
   return props;
 }
 
@@ -165,5 +171,97 @@ describe('BookingForm', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
     await waitFor(() => expect(props.onUnavailable).toHaveBeenCalled());
+  });
+
+  it('409 with alternatives: explains, keeps the form, and books an alternative in one tap', async () => {
+    const alternatives = [
+      '2026-11-13T17:00:00Z',
+      '2026-11-13T15:00:00Z',
+      '2026-11-14T16:00:00Z',
+    ].map((startUtc) => ({
+      startUtc,
+      endUtc: startUtc.replace(/T(\d\d)/, (_, h) => `T${Number(h) + 1}`),
+    }));
+    const create = vi
+      .spyOn(api, 'createBooking')
+      .mockRejectedValueOnce(new ApiError('unavailable', 'taken', {}, 'FULLY_BOOKED', alternatives))
+      .mockResolvedValueOnce({ ...booking, startUtc: '2026-11-13T17:00:00Z' });
+    const props = renderForm();
+    fillValid();
+    fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
+
+    const panel = await screen.findByRole('alert');
+    expect(panel.textContent).toContain('Sorry, 4:00 PM was just taken.');
+    expect(panel.textContent).toContain('Tap one to book it with the details you');
+    const options = within(panel).getAllByRole('button').slice(0, 3);
+    expect(options.map((b) => b.textContent)).toEqual([
+      'Fri 13 Nov, 5:00 PM London time (GMT+0)',
+      'Fri 13 Nov, 3:00 PM London time (GMT+0)',
+      'Sat 14 Nov, 4:00 PM London time (GMT+0)',
+    ]);
+    expect(props.onSlotsStale).toHaveBeenCalled();
+    expect(props.onUnavailable).not.toHaveBeenCalled();
+    expect((screen.getByLabelText("Child's first name") as HTMLInputElement).value).toBe('Oliver');
+
+    fireEvent.click(options[0]!);
+    await waitFor(() => expect(props.onBooked).toHaveBeenCalled());
+    const [firstCall, secondCall] = create.mock.calls;
+    expect(secondCall![0]).toEqual({ ...firstCall![0], startUtc: '2026-11-13T17:00:00Z' });
+    expect(secondCall![1]).not.toBe(firstCall![1]); // a different request gets a fresh key
+  });
+
+  it('409 for the daily limit names the day', async () => {
+    vi.spyOn(api, 'createBooking').mockRejectedValue(
+      new ApiError('unavailable', 'limit', {}, 'DAILY_LIMIT_REACHED', [
+        { startUtc: '2026-11-14T16:00:00Z', endUtc: '2026-11-14T17:00:00Z' },
+      ]),
+    );
+    renderForm();
+    fillValid();
+    fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Our mentors just reached their class limit for Fri 13 Nov.',
+    );
+  });
+
+  it('duplicate trial: names the child and the existing time, and links to that booking', async () => {
+    vi.spyOn(api, 'createBooking').mockRejectedValue(
+      new ApiError('duplicate', 'Oliver already has a trial class booked.', {}, undefined, [], {
+        id: '6f1c2b1e-0000-4000-8000-000000000009',
+        startUtc: '2026-11-15T16:00:00Z',
+        endUtc: '2026-11-15T17:00:00Z',
+        childName: 'Oliver',
+      }),
+    );
+    renderForm();
+    fillValid();
+    fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain(
+      'Oliver already has a trial on Sun 15 Nov, 4:00 PM London time (GMT+0).',
+    );
+    expect(
+      within(alert).getByRole('link', { name: 'View that booking' }).getAttribute('href'),
+    ).toBe('/bookings/6f1c2b1e-0000-4000-8000-000000000009');
+    expect(alert.textContent).toContain(
+      "Booking for a different child? Change the child's name above.",
+    );
+  });
+
+  it('editing the details after a failure gets a new Idempotency-Key', async () => {
+    const create = vi
+      .spyOn(api, 'createBooking')
+      .mockRejectedValueOnce(
+        new ApiError('busy', "We're busy right now. Please try again in a moment."),
+      )
+      .mockResolvedValueOnce(booking);
+    renderForm();
+    fillValid();
+    fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
+    await screen.findByText(/busy right now/);
+    fill("Child's first name", 'Amelia');
+    fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(2));
+    expect(create.mock.calls[1]![1]).not.toBe(create.mock.calls[0]![1]);
   });
 });

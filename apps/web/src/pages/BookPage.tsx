@@ -42,7 +42,9 @@ export function BookPage() {
   const navigate = useNavigate();
   const prefill = (useLocation().state as { prefill?: ParentPrefill } | null)?.prefill;
 
-  const [selectedStart, setSelectedStart] = useState<string | null>(null);
+  // The chosen slot itself, not just its start: after a 409 the refreshed list shows it as
+  // booked, but the form (and everything the parent typed) must stay on screen.
+  const [selectedSlot, setSelectedSlot] = useState<SlotDto | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [focusStart, setFocusStart] = useState<string | null>(null);
   const [formInView, setFormInView] = useState(false);
@@ -53,13 +55,6 @@ export function BookPage() {
   const selectedDate =
     requested && days.some((d) => d.date === requested) ? requested : defaultDate(days);
   const selectedDay = days.find((d) => d.date === selectedDate) ?? null;
-  const selectedSlot = useMemo(() => {
-    for (const day of days) {
-      const slot = day.slots.find((s) => s.startUtc === selectedStart);
-      if (slot) return slot.available ? slot : null;
-    }
-    return null;
-  }, [days, selectedStart]);
   const anyOpen = useMemo(() => nextOpenSlot(days) !== null, [days]);
   const today = zone ? localDateOf(now().toISOString(), zone) : '';
 
@@ -71,12 +66,15 @@ export function BookPage() {
   // Changing zone keeps the chosen class (an instant) and moves the strip to its new local date.
   const changeZone = (next: string) => {
     setZone(next);
-    if (selectedStart) selectDate(localDateOf(selectedStart, next));
+    if (selectedSlot) selectDate(localDateOf(selectedSlot.startUtc, next));
   };
 
   const selectSlot = (slot: SlotDto) => {
-    setSelectedStart(slot.startUtc);
+    setSelectedSlot(slot);
     setNotice(null);
+    // Pin the day in the URL: otherwise a refresh after a 409 could re-run "first open day"
+    // and move the parent off the day they were looking at.
+    if (zone) selectDate(localDateOf(slot.startUtc, zone));
     requestAnimationFrame(() => {
       const form = document.getElementById('booking-form');
       form?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
@@ -94,9 +92,9 @@ export function BookPage() {
     navigate(`/bookings/${booking.id}`, { state: { booking } });
 
   const onUnavailable = (error: ApiError) => {
-    const time = selectedStart && zone ? formatTime(selectedStart, zone) : '';
+    const time = selectedSlot && zone ? formatTime(selectedSlot.startUtc, zone) : '';
     setNotice(error.reason === 'FULLY_BOOKED' ? copy.slotJustTaken(time) : error.message);
-    setSelectedStart(null);
+    setSelectedSlot(null);
     slots.reload();
     requestAnimationFrame(() => timesHeadingRef.current?.focus());
   };
@@ -165,8 +163,9 @@ export function BookPage() {
               prefill={prefill}
               onBooked={onBooked}
               onUnavailable={onUnavailable}
+              onSlotsStale={slots.reload}
               onChangeTime={() => {
-                setSelectedStart(null);
+                setSelectedSlot(null);
                 requestAnimationFrame(() => timesHeadingRef.current?.focus());
               }}
             />

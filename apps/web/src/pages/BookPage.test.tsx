@@ -80,6 +80,37 @@ describe('BookPage', () => {
     expect(screen.queryByRole('button', { name: 'Book free class' })).toBeNull();
   });
 
+  it('409 with alternatives: refreshes the times but keeps the form and its data on screen', async () => {
+    const fresh = slotsResponse();
+    fresh.days[3]!.slots[0] = {
+      ...fresh.days[3]!.slots[0]!,
+      available: false,
+      reason: 'FULLY_BOOKED',
+    };
+    const get = vi
+      .spyOn(api, 'getSlots')
+      .mockResolvedValueOnce(slotsResponse())
+      .mockResolvedValueOnce(fresh);
+    vi.spyOn(api, 'createBooking').mockRejectedValue(
+      new ApiError('unavailable', 'taken', {}, 'FULLY_BOOKED', [
+        { startUtc: '2026-11-16T21:00:00Z', endUtc: '2026-11-16T22:00:00Z' },
+      ]),
+    );
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: '4:00 PM' }));
+    fillForm();
+    fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
+
+    expect(
+      await screen.findByRole('button', { name: 'Mon 16 Nov, 4:00 PM New York time (GMT-5)' }),
+    ).toBeTruthy();
+    await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
+    // The grid now shows the taken time as booked, and the form is still there with its data.
+    await screen.findByRole('button', { name: /^4:00 PM.*Booked/ });
+    expect((screen.getByLabelText("Child's first name") as HTMLInputElement).value).toBe('Oliver');
+    expect(screen.getByRole('button', { name: 'Book free class' })).toBeTruthy();
+  });
+
   it('asks for the zone when it cannot be detected or saved', () => {
     localStorage.clear();
     const get = vi.spyOn(api, 'getSlots');

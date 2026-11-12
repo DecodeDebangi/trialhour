@@ -14,19 +14,23 @@ function BlocksMark() {
   );
 }
 
-export function Layout({ children }: { children: ReactNode }) {
+export function Layout({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
+  const width = wide ? styles.wide : '';
   return (
     <>
-      <header className={styles.header}>
+      <header className={`${styles.header} ${width}`}>
         <Link to="/" className={styles.brand}>
           <BlocksMark />
           {copy.productName}
         </Link>
+        <Link to="/outbox" className={styles.navLink}>
+          {copy.navOutbox}
+        </Link>
       </header>
-      <main className={styles.main} id="main">
+      <main className={`${styles.main} ${width}`} id="main">
         {children}
       </main>
-      <footer className={styles.footer}>Demo app for a take-home assignment.</footer>
+      <footer className={`${styles.footer} ${width}`}>Demo app for a take-home assignment.</footer>
     </>
   );
 }

@@ -20,6 +20,7 @@ const booking: BookingResponse = {
     timezone: 'Asia/Kolkata',
   },
   classLink: 'https://class.example.com/trial/6f1c2b1e-0000-4000-8000-000000000001',
+  icsUrl: '/api/bookings/6f1c2b1e-0000-4000-8000-000000000001/calendar.ics',
 };
 
 function HomeProbe() {
@@ -53,6 +54,20 @@ describe('ConfirmationPage', () => {
     );
     // The mentor's own time is deliberately not shown to parents.
     expect(document.body.textContent).not.toMatch(/India time|GMT\+5:30|2:30 AM/);
+  });
+
+  it('says the details were emailed, links to the outbox and offers the calendar file', async () => {
+    vi.spyOn(api, 'getBooking').mockResolvedValue(booking);
+    renderAt();
+    expect(
+      await screen.findByText("We've emailed the details to ashley@example.com."),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'See both emails in the demo outbox' }).getAttribute('href'),
+    ).toBe(`/outbox?booking=${booking.id}`);
+    const calendar = screen.getByRole('link', { name: 'Add to calendar (.ics)' });
+    expect(calendar.getAttribute('href')).toBe(booking.icsUrl);
+    expect(calendar.getAttribute('download')).toBe('trial-class.ics');
   });
 
   it('gives laptop/desktop guidance, not tablets', async () => {

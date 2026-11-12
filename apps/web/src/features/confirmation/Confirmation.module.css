@@ -158,3 +158,34 @@
   padding: 0 var(--space-4);
   font-weight: 600;
 }
+
+.calendarLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-hover);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.emailed {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: center;
+  text-align: center;
+}
+
+.emailed p {
+  margin: 0;
+}
+
+.emailed a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  font-weight: 600;
+}

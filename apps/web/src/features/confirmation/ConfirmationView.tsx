@@ -58,7 +58,20 @@ export function ConfirmationView({ booking }: { booking: BookingResponse }) {
             </a>
           </dd>
         </div>
+        <div className={styles.item}>
+          <dt>{copy.calendarLabel}</dt>
+          <dd>
+            <a className={styles.calendarLink} href={booking.icsUrl} download="trial-class.ics">
+              {copy.addToCalendar}
+            </a>
+          </dd>
+        </div>
       </dl>
+
+      <div className={styles.emailed}>
+        <p>{copy.emailedTo(booking.parent.email)}</p>
+        <Link to={`/outbox?booking=${booking.id}`}>{copy.seeOutbox}</Link>
+      </div>
 
       <section className={styles.next} aria-labelledby="next-heading">
         <h2 id="next-heading" className={styles.nextHeading}>

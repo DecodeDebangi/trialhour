@@ -1,6 +1,8 @@
 import {
   bookingResponseSchema,
+  outboxResponseSchema,
   slotsResponseSchema,
+  type OutboxResponse,
   type BookingRequest,
   type BookingResponse,
   type SlotsResponse,
@@ -98,6 +100,11 @@ export const api = {
       headers: { 'content-type': 'application/json', 'idempotency-key': idempotencyKey },
       body: JSON.stringify(body),
     });
+  },
+
+  getOutbox(bookingId?: string): Promise<OutboxResponse> {
+    const query = bookingId ? `?bookingId=${encodeURIComponent(bookingId)}` : '';
+    return request(`/api/outbox${query}`, outboxResponseSchema);
   },
 
   getBooking(id: string): Promise<BookingResponse> {

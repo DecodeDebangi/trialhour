@@ -1,0 +1,23 @@
+# Assignment brief (Codeyoung's document, not ours to publish)
+*.pdf
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+coverage/
+playwright-report/
+test-results/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

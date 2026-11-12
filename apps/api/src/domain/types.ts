@@ -27,3 +27,20 @@ export interface MentorSlot {
   /** "YYYY-MM-DD" in the mentor's zone: the date the window started on (SPEC A3). */
   shiftDate: string;
 }
+
+/** A confirmed booking, as far as availability is concerned. */
+export interface BookedSlot {
+  mentorId: string;
+  startUtc: DateTime;
+  shiftDate: string;
+}
+
+/** Business rules for when and how often a slot can be booked (SPEC A6, R4). */
+export interface BookingPolicy {
+  minNoticeMinutes: number;
+  horizonDays: number;
+  dailyCap: number;
+}
+
+/** Why a slot inside some mentor's window can't be booked. Precedence follows the list order. */
+export type UnavailableReason = 'TOO_SOON' | 'DAILY_LIMIT_REACHED' | 'FULLY_BOOKED';

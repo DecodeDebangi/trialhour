@@ -73,7 +73,7 @@ describe('BookPage', () => {
 
     expect(
       await screen.findByText(
-        "No mentor is free at 4:00 PM on Sun 15 Nov anymore. We've refreshed the times; please pick another.",
+        "No mentor is free at Sun 15 Nov, 4:00 PM New York time (GMT-5) anymore. We've refreshed the times; please pick another.",
       ),
     ).toBeTruthy();
     await waitFor(() => expect(get).toHaveBeenCalledTimes(2));

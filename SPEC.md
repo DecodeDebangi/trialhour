@@ -137,7 +137,7 @@ This is a greedy heuristic, not an optimum. Optimal assignment is a matching pro
 | Every covering mentor at the daily cap | Same as booked. Reasons are about the time; the daily cap is internal and never shown to parents. |
 | Day with no open slots | Greyed slots with reasons, plus "Next available: Fri 13 Nov, 4:00 PM New York time (GMT-5)" (one click) |
 | Nothing open in the next 14 days | "All trial slots for the next 2 weeks are taken — new times open daily." |
-| 409 on submit (slot taken mid-form) | "No mentor is free at 4:00 PM on Sat 14 Nov anymore. Here are the nearest open times…" then ≤5 alternatives. Choose one, then confirm; the form data is kept and a new idempotency key is used. |
+| 409 on submit (slot taken mid-form) | "No mentor is free at Sat 14 Nov, 4:00 PM London time (GMT+0) anymore. Here are the nearest open times…" then ≤5 alternatives. Choose one, then confirm; the form data is kept and a new idempotency key is used. |
 | Duplicate trial | "Aanya already has a trial on Fri 13 Nov, 4:00 PM New York time (GMT-5)" with a link to that booking |
 | Validation error | Inline per field |
 | Network error or 5xx | Retry with the **same** idempotency key (safe to repeat) |

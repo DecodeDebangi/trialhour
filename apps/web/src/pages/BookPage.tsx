@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  formatDate,
+  formatInstant,
   formatTime,
   localDateOf,
   type BookingResponse,
@@ -99,8 +99,7 @@ export function BookPage() {
 
   const onUnavailable = (error: ApiError) => {
     if (selectedSlot && zone) {
-      const start = selectedSlot.startUtc;
-      setNotice(copy.slotJustTaken(error.reason, formatTime(start, zone), formatDate(start, zone)));
+      setNotice(copy.slotJustTaken(error.reason, formatInstant(selectedSlot.startUtc, zone)));
     } else {
       setNotice(error.message);
     }

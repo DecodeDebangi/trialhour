@@ -50,14 +50,18 @@ export const copy = {
   noClassesOnDay: (date: string) => `No classes on ${date}.`,
   allFull:
     'All trial times for the next 2 weeks are taken. New times open every day, so please check back tomorrow.',
-  /** Heading of the 409 panel: the chosen time stopped being bookable while the form was open. */
-  conflictTitle: (reason: UnavailableReason | undefined, time: string, date: string) =>
+  /**
+   * Heading of the 409 panel: the chosen time stopped being bookable while the form was open.
+   * `when` is the full formatInstant() text (date, time, zone): this sits away from the grid's
+   * zone header, so it must stand on its own.
+   */
+  conflictTitle: (reason: UnavailableReason | undefined, when: string) =>
     reason === 'TOO_SOON'
-      ? `${time} on ${date} is now too soon to book.`
-      : `No mentor is free at ${time} on ${date} anymore.`,
+      ? `${when} is now too soon to book.`
+      : `No mentor is free at ${when} anymore.`,
   /** Page-level notice when a 409 comes back with no alternatives to offer. */
-  slotJustTaken: (reason: UnavailableReason | undefined, time: string, date: string) =>
-    `${copy.conflictTitle(reason, time, date)} We've refreshed the times; please pick another.`,
+  slotJustTaken: (reason: UnavailableReason | undefined, when: string) =>
+    `${copy.conflictTitle(reason, when)} We've refreshed the times; please pick another.`,
   conflictLead:
     "Here are the nearest open times. Choose one, then confirm to book it with the details you've entered.",
   bookThis: (when: string) => `Book ${when}`,

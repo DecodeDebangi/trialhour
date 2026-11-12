@@ -195,7 +195,9 @@ describe('BookingForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
 
     const panel = await screen.findByRole('alert');
-    expect(panel.textContent).toContain('No mentor is free at 4:00 PM on Fri 13 Nov anymore.');
+    expect(panel.textContent).toContain(
+      'No mentor is free at Fri 13 Nov, 4:00 PM London time (GMT+0) anymore.',
+    );
     expect(panel.textContent).toContain('Choose one, then confirm to book it with the details you');
     const options = within(panel).getAllByRole('button').slice(0, 3);
     expect(options.map((b) => b.textContent)).toEqual([
@@ -238,7 +240,9 @@ describe('BookingForm', () => {
     fillValid();
     fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
     const panel = await screen.findByRole('alert');
-    expect(panel.textContent).toContain('No mentor is free at 4:00 PM on Fri 13 Nov anymore.');
+    expect(panel.textContent).toContain(
+      'No mentor is free at Fri 13 Nov, 4:00 PM London time (GMT+0) anymore.',
+    );
     expect(panel.textContent).not.toMatch(/limit/i);
   });
 

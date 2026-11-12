@@ -2,9 +2,7 @@ import { useId, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import {
   bookingRequestSchema,
-  formatDate,
   formatInstant,
-  formatTime,
   type BookingRequest,
   type BookingResponse,
   type SlotDto,
@@ -118,9 +116,8 @@ export function BookingForm({
       : { errors: found };
   }
 
-  // The summary card right above shows this time with its zone, so time + date reads clearly here.
   const conflictTitle = (error: ApiError, startUtc: string) =>
-    copy.conflictTitle(error.reason, formatTime(startUtc, zone), formatDate(startUtc, zone));
+    copy.conflictTitle(error.reason, formatInstant(startUtc, zone));
 
   /** Submits for the chosen slot, or for an alternative picked from the conflict panel. */
   async function submit(e?: FormEvent, startUtc: string = slot.startUtc) {

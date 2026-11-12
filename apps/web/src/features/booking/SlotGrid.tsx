@@ -1,5 +1,7 @@
 import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import {
+  DAYTIME_END_HOUR,
+  DAYTIME_START_HOUR,
   formatDate,
   formatInstant,
   formatTime,
@@ -11,6 +13,7 @@ import {
   type UnavailableReason,
 } from '@codeyoung/shared';
 import { copy } from '../../copy.js';
+import type { SlotFilter } from '../../lib/days.js';
 import styles from './SlotGrid.module.css';
 
 interface SlotGridProps {
@@ -27,6 +30,15 @@ interface SlotGridProps {
   /** Move keyboard focus to this slot once it is rendered (after a jump). */
   focusStart?: string | null;
   headingRef?: React.Ref<HTMLHeadingElement>;
+  /** Daytime in the parent's zone (shared isDaytime); other times sit behind the toggle. */
+  isDaytimeSlot: SlotFilter;
+  showNight: boolean;
+  onToggleNight: () => void;
+}
+
+/** "7:00 AM" for an hour of the day, for the toggle's hint. */
+function clockHour(hour: number): string {
+  return `${hour % 12 || 12}:00 ${hour < 12 ? 'AM' : 'PM'}`;
 }
 
 function reasonMessage(
@@ -55,6 +67,9 @@ export function SlotGrid(props: SlotGridProps) {
     nextOpenAfter,
     onJumpTo,
     focusStart,
+    isDaytimeSlot,
+    showNight,
+    onToggleNight,
   } = props;
   const [expanded, setExpanded] = useState<string | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -74,7 +89,10 @@ export function SlotGrid(props: SlotGridProps) {
   const offsets = new Set(slots.map((s) => offsetLabel(s.startUtc, zone)));
   const mixedOffsets = offsets.size > 1; // a DST change happens on this day
   const headerOffset = mixedOffsets ? '' : ` (${[...offsets][0] ?? offsetLabel(dayStart, zone)})`;
-  const firstOpen = slots.find((s) => s.available);
+  // Early-morning and late-night times are hidden until the parent asks for them.
+  const nightCount = slots.filter((s) => !isDaytimeSlot(s)).length;
+  const shown = showNight ? slots : slots.filter(isDaytimeSlot);
+  const firstOpen = shown.find((s) => s.available);
   const lastStart = slots.at(-1)?.startUtc ?? dayStart.toISO()!;
   const nextOpenElsewhere = firstOpen ? null : nextOpenAfter(lastStart);
 
@@ -97,79 +115,98 @@ export function SlotGrid(props: SlotGridProps) {
         </div>
       ) : (
         <>
-          <div className={styles.grid} ref={gridRef}>
-            {slots.map((slot) => {
-              const time = formatTime(slot.startUtc, zone);
-              const offset = mixedOffsets ? offsetLabel(slot.startUtc, zone) : null;
-              if (slot.available) {
-                const selected = slot.startUtc === selectedStart;
-                return (
-                  <button
-                    key={slot.startUtc}
-                    type="button"
-                    data-start={slot.startUtc}
-                    className={`${styles.slot} ${selected ? styles.selected : ''}`}
-                    aria-pressed={selected}
-                    onClick={() => {
-                      setExpanded(null);
-                      onSelect(slot);
-                    }}
-                  >
-                    <span className={styles.time}>{time}</span>
-                    {offset && <span className={styles.offset}>{offset}</span>}
-                  </button>
-                );
-              }
-              const reason = slot.reason ?? 'FULLY_BOOKED';
-              const isOpen = expanded === slot.startUtc;
-              const panelId = `${baseId}-panel-${slot.startUtc}`;
-              const reasonId = `${baseId}-reason-${slot.startUtc}`;
-              const message = reasonMessage(reason, slot, zone, policy);
-              const next = nextOpenAfter(slot.startUtc);
-              return (
-                <Fragment key={slot.startUtc}>
-                  <button
-                    type="button"
-                    data-start={slot.startUtc}
-                    className={`${styles.slot} ${styles.unavailable} ${isOpen ? styles.expanded : ''}`}
-                    aria-disabled="true"
-                    aria-expanded={isOpen}
-                    aria-controls={panelId}
-                    aria-describedby={reasonId}
-                    onClick={() => setExpanded(isOpen ? null : slot.startUtc)}
-                  >
-                    <span className={styles.time}>{time}</span>
-                    {offset && <span className={styles.offset}>{offset}</span>}
-                    <span className={styles.reasonShort}>
-                      <span aria-hidden="true">✕</span>
-                      {copy.reasonShort[reason]}
-                    </span>
-                  </button>
-                  {/* Outside the button: it describes it without becoming part of its name. */}
-                  <span id={reasonId} className="visually-hidden">
-                    {message}
-                  </span>
-                  {isOpen && (
-                    <div
-                      id={panelId}
-                      className={styles.panel}
-                      role="region"
-                      aria-label={`${time}: ${copy.reasonShort[reason]}`}
+          {shown.length > 0 && (
+            <div className={styles.grid} ref={gridRef}>
+              {shown.map((slot) => {
+                const time = formatTime(slot.startUtc, zone);
+                const offset = mixedOffsets ? offsetLabel(slot.startUtc, zone) : null;
+                if (slot.available) {
+                  const selected = slot.startUtc === selectedStart;
+                  return (
+                    <button
+                      key={slot.startUtc}
+                      type="button"
+                      data-start={slot.startUtc}
+                      className={`${styles.slot} ${selected ? styles.selected : ''}`}
+                      aria-pressed={selected}
+                      onClick={() => {
+                        setExpanded(null);
+                        onSelect(slot);
+                      }}
                     >
-                      <p>{message}</p>
-                      {next && <NextOpenButton slot={next} zone={zone} onJumpTo={onJumpTo} />}
-                    </div>
-                  )}
-                </Fragment>
-              );
-            })}
-          </div>
+                      <span className={styles.time}>{time}</span>
+                      {offset && <span className={styles.offset}>{offset}</span>}
+                    </button>
+                  );
+                }
+                const reason = slot.reason ?? 'FULLY_BOOKED';
+                const isOpen = expanded === slot.startUtc;
+                const panelId = `${baseId}-panel-${slot.startUtc}`;
+                const reasonId = `${baseId}-reason-${slot.startUtc}`;
+                const message = reasonMessage(reason, slot, zone, policy);
+                const next = nextOpenAfter(slot.startUtc);
+                return (
+                  <Fragment key={slot.startUtc}>
+                    <button
+                      type="button"
+                      data-start={slot.startUtc}
+                      className={`${styles.slot} ${styles.unavailable} ${isOpen ? styles.expanded : ''}`}
+                      aria-disabled="true"
+                      aria-expanded={isOpen}
+                      aria-controls={panelId}
+                      aria-describedby={reasonId}
+                      onClick={() => setExpanded(isOpen ? null : slot.startUtc)}
+                    >
+                      <span className={styles.time}>{time}</span>
+                      {offset && <span className={styles.offset}>{offset}</span>}
+                      <span className={styles.reasonShort}>
+                        <span aria-hidden="true">✕</span>
+                        {copy.reasonShort[reason]}
+                      </span>
+                    </button>
+                    {/* Outside the button: it describes it without becoming part of its name. */}
+                    <span id={reasonId} className="visually-hidden">
+                      {message}
+                    </span>
+                    {isOpen && (
+                      <div
+                        id={panelId}
+                        className={styles.panel}
+                        role="region"
+                        aria-label={`${time}: ${copy.reasonShort[reason]}`}
+                      >
+                        <p>{message}</p>
+                        {next && <NextOpenButton slot={next} zone={zone} onJumpTo={onJumpTo} />}
+                      </div>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </div>
+          )}
           {!firstOpen && (
             <div className={styles.empty} style={{ marginTop: 'var(--space-3)' }}>
-              <p>{copy.noOpenOnDay(dateLabel)}</p>
+              <p>
+                {shown.length === 0 ? copy.noDaytimeOnDay(dateLabel) : copy.noOpenOnDay(dateLabel)}
+              </p>
               {nextOpenElsewhere && (
                 <NextOpenButton slot={nextOpenElsewhere} zone={zone} onJumpTo={onJumpTo} />
               )}
+            </div>
+          )}
+          {nightCount > 0 && (
+            <div className={styles.nightToggle}>
+              <button
+                type="button"
+                className={styles.toggle}
+                aria-pressed={showNight}
+                onClick={onToggleNight}
+              >
+                {showNight ? copy.hideNightTimes : copy.showNightTimes(nightCount)}
+              </button>
+              <p className={styles.toggleHint}>
+                {copy.daytimeHint(clockHour(DAYTIME_START_HOUR), clockHour(DAYTIME_END_HOUR))}
+              </p>
             </div>
           )}
         </>

@@ -41,4 +41,28 @@ describe('DateStrip', () => {
     fireEvent.click(screen.getByRole('button', { name: /Fri/ }));
     expect(onSelect).toHaveBeenCalledWith('2026-11-13');
   });
+
+  it('counts only what the grid shows: a night-only day says "No daytime times"', () => {
+    const nightOnly = [
+      {
+        date: '2026-11-16',
+        slots: [
+          { startUtc: '2026-11-16T07:00:00Z', endUtc: '2026-11-16T08:00:00Z', available: true },
+          { startUtc: '2026-11-16T08:00:00Z', endUtc: '2026-11-16T09:00:00Z', available: true },
+        ],
+      },
+    ];
+    const daytimeOnly = () => false;
+    render(
+      <DateStrip
+        days={nightOnly}
+        zone={NY}
+        today="2026-11-12"
+        selectedDate={null}
+        onSelect={() => {}}
+        visible={daytimeOnly}
+      />,
+    );
+    expect(screen.getByRole('button').textContent).toBe('Mon16 Nov✕No daytime times');
+  });
 });

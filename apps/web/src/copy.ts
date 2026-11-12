@@ -22,6 +22,7 @@ export const copy = {
   dayFull: 'Full',
   dayClosed: 'Closed',
   dayNoClasses: 'No classes',
+  dayNightOnly: 'No daytime times',
 
   timesHeading: 'Pick a time',
   loadingTimes: 'Finding open times…',
@@ -48,6 +49,12 @@ export const copy = {
   nextOpen: (when: string) => `Next open time: ${when}`,
   noOpenOnDay: (date: string) => `No open times on ${date}.`,
   noClassesOnDay: (date: string) => `No classes on ${date}.`,
+  noDaytimeOnDay: (date: string) => `No daytime times on ${date}.`,
+  /** A no-break space keeps "times (N)" together, so the count never wraps onto its own line. */
+  showNightTimes: (n: number) => `Show early-morning and late-night times\u00a0(${n})`,
+  hideNightTimes: 'Hide early-morning and late-night times',
+  daytimeHint: (from: string, to: string) =>
+    `Times between ${from} and ${to} in your time zone are shown first.`,
   allFull:
     'All trial times for the next 2 weeks are taken. New times open every day, so please check back tomorrow.',
   /**

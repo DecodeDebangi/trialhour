@@ -111,6 +111,45 @@ describe('BookPage', () => {
     expect(screen.getByRole('button', { name: 'Book free class' })).toBeTruthy();
   });
 
+  it('shows daytime times by default; early-morning and late-night ones behind a toggle', async () => {
+    const slot = (startUtc: string) => ({
+      startUtc,
+      endUtc: new Date(Date.parse(startUtc) + 3_600_000).toISOString().replace('.000', ''),
+      available: true,
+    });
+    vi.spyOn(api, 'getSlots').mockResolvedValue({
+      timezone: NY,
+      policy: { minNoticeMinutes: 240, horizonDays: 14, dailyCap: 2 },
+      days: [
+        // Fri 13 Nov in New York: only 2 AM and 3 AM.
+        { date: '2026-11-13', slots: [slot('2026-11-13T07:00:00Z'), slot('2026-11-13T08:00:00Z')] },
+        // Sat 14 Nov: 4 PM (daytime) and 10 PM (late night).
+        { date: '2026-11-14', slots: [slot('2026-11-14T21:00:00Z'), slot('2026-11-15T03:00:00Z')] },
+      ],
+    });
+    renderPage();
+    const chip = (re: RegExp) => screen.getByRole('button', { name: re });
+
+    // Default: counts match what's visible, and the page opens on the first day with daytime times.
+    await screen.findByText('Sat 14 Nov · New York time (GMT-5)');
+    expect(chip(/^Fri/).textContent).toContain('No daytime times');
+    expect(chip(/^Sat/).textContent).toContain('1 open');
+    expect(screen.queryByRole('button', { name: '10:00 PM' })).toBeNull();
+    expect(screen.getByRole('button', { name: '4:00 PM' })).toBeTruthy();
+
+    // Opting in reveals them, updates the counts, and keeps the parent on the same day.
+    fireEvent.click(
+      screen.getByRole('button', { name: /^Show early-morning and late-night times\s\(1\)$/ }),
+    );
+    expect(screen.getByRole('button', { name: '10:00 PM' })).toBeTruthy();
+    expect(screen.getByText('Sat 14 Nov · New York time (GMT-5)')).toBeTruthy();
+    expect(chip(/^Fri/).textContent).toContain('2 open');
+    expect(chip(/^Sat/).textContent).toContain('2 open');
+    expect(
+      screen.getByRole('button', { name: 'Hide early-morning and late-night times' }),
+    ).toBeTruthy();
+  });
+
   it('asks for the zone when it cannot be detected or saved', () => {
     localStorage.clear();
     const get = vi.spyOn(api, 'getSlots');

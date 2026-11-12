@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { formatDate, localDayBounds } from '@codeyoung/shared';
 import { copy } from '../../copy.js';
-import { dayStatus, type Day, type DayStatus } from '../../lib/days.js';
+import { dayStatus, SHOW_ALL, type Day, type DayStatus, type SlotFilter } from '../../lib/days.js';
 import styles from './DateStrip.module.css';
 
 interface DateStripProps {
@@ -10,6 +10,8 @@ interface DateStripProps {
   today: string;
   selectedDate: string | null;
   onSelect: (date: string) => void;
+  /** Counts only what the grid shows (daytime by default), so the strip never over-promises. */
+  visible?: SlotFilter;
 }
 
 function statusText(status: DayStatus): string {
@@ -18,6 +20,8 @@ function statusText(status: DayStatus): string {
       return copy.dayOpen(status.count);
     case 'full':
       return copy.dayFull;
+    case 'nightOnly':
+      return copy.dayNightOnly;
     case 'closed':
       return copy.dayClosed;
     case 'none':
@@ -26,7 +30,14 @@ function statusText(status: DayStatus): string {
 }
 
 /** Horizontal day picker. Each day says in words whether it has open times. */
-export function DateStrip({ days, zone, today, selectedDate, onSelect }: DateStripProps) {
+export function DateStrip({
+  days,
+  zone,
+  today,
+  selectedDate,
+  onSelect,
+  visible = SHOW_ALL,
+}: DateStripProps) {
   const selectedRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -40,7 +51,7 @@ export function DateStrip({ days, zone, today, selectedDate, onSelect }: DateStr
       </h2>
       <ul className={styles.strip}>
         {days.map((day) => {
-          const status = dayStatus(day);
+          const status = dayStatus(day, visible);
           const [weekday, ...rest] = formatDate(
             localDayBounds(day.date, zone).startUtc,
             zone,

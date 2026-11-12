@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { description } from '../../testUtils.js';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { isDaytime, type SlotDto } from '@codeyoung/shared';
 import { SlotGrid } from './SlotGrid.js';
 import { NY, slot, slotsResponse } from '../../testFixtures.js';
 import { nextOpenSlot } from '../../lib/days.js';
@@ -18,6 +19,9 @@ function renderDay(date: string, overrides: Partial<Parameters<typeof SlotGrid>[
     onSelect: vi.fn(),
     nextOpenAfter: (start: string) => nextOpenSlot(days, start),
     onJumpTo: vi.fn(),
+    isDaytimeSlot: (s: SlotDto) => isDaytime(s.startUtc, NY),
+    showNight: false,
+    onToggleNight: vi.fn(),
     ...overrides,
   };
   render(<SlotGrid {...props} />);
@@ -132,13 +136,86 @@ describe('SlotGrid', () => {
         onSelect={() => {}}
         nextOpenAfter={() => null}
         onJumpTo={() => {}}
+        isDaytimeSlot={(s) => isDaytime(s.startUtc, NY)}
+        showNight
+        onToggleNight={() => {}}
       />,
     );
     expect(screen.getByText('Sun 7 Nov · New York time')).toBeTruthy();
-    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual([
-      '1:00 AMGMT-4',
-      '1:00 AMGMT-5',
-      '2:00 AMGMT-5',
-    ]);
+    expect(
+      screen
+        .getAllByRole('button')
+        .filter((b) => b.dataset.start) // slot buttons only (not the night-times toggle)
+        .map((b) => b.textContent),
+    ).toEqual(['1:00 AMGMT-4', '1:00 AMGMT-5', '2:00 AMGMT-5']);
+  });
+
+  describe('early-morning and late-night times', () => {
+    // Sat 14 Nov 2026 in New York: 5 AM and 11 PM are night, 9 AM and 4 PM are daytime.
+    const mixed = [
+      slot('2026-11-14T10:00:00Z'), // 5:00 AM
+      slot('2026-11-14T14:00:00Z'), // 9:00 AM
+      slot('2026-11-14T21:00:00Z'), // 4:00 PM
+      slot('2026-11-15T04:00:00Z'), // 11:00 PM
+    ];
+    const grid = (showNight: boolean, onToggleNight = vi.fn(), slots = mixed) => {
+      render(
+        <SlotGrid
+          date="2026-11-14"
+          slots={slots}
+          zone={NY}
+          policy={policy}
+          selectedStart={null}
+          onSelect={() => {}}
+          nextOpenAfter={() => null}
+          onJumpTo={() => {}}
+          isDaytimeSlot={(s) => isDaytime(s.startUtc, NY)}
+          showNight={showNight}
+          onToggleNight={onToggleNight}
+        />,
+      );
+      return onToggleNight;
+    };
+    const times = () =>
+      screen
+        .getAllByRole('button', { pressed: false })
+        .filter((b) => b.dataset.start)
+        .map((b) => b.textContent);
+
+    it('are hidden by default, with a toggle saying how many', () => {
+      const onToggle = grid(false);
+      expect(times()).toEqual(['9:00 AM', '4:00 PM']);
+      const toggle = screen.getByRole('button', {
+        name: /^Show early-morning and late-night times\s\(2\)$/,
+      });
+      expect(toggle.getAttribute('aria-pressed')).toBe('false');
+      expect(
+        screen.getByText('Times between 7:00 AM and 9:00 PM in your time zone are shown first.'),
+      ).toBeTruthy();
+      fireEvent.click(toggle);
+      expect(onToggle).toHaveBeenCalledTimes(1);
+    });
+
+    it('are shown, in order, once the parent opts in', () => {
+      grid(true);
+      expect(times()).toEqual(['5:00 AM', '9:00 AM', '4:00 PM', '11:00 PM']);
+      const toggle = screen.getByRole('button', {
+        name: 'Hide early-morning and late-night times',
+      });
+      expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('a day with only night times says so instead of showing an empty grid', () => {
+      grid(false, vi.fn(), [mixed[0]!, mixed[3]!]);
+      expect(screen.getByText('No daytime times on Sat 14 Nov.')).toBeTruthy();
+      expect(
+        screen.getByRole('button', { name: /Show early-morning and late-night times\s\(2\)/ }),
+      ).toBeTruthy();
+    });
+
+    it('no toggle when every time that day is daytime', () => {
+      renderDay('2026-11-15');
+      expect(screen.queryByRole('button', { name: /early-morning/ })).toBeNull();
+    });
   });
 });

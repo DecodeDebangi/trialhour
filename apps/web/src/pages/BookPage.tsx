@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   formatInstant,
   formatTime,
+  isDaytime,
   localDateOf,
   type BookingResponse,
   type SlotDto,
@@ -18,7 +19,7 @@ import { ZoneBar } from '../features/booking/ZoneBar.js';
 import { useSlots } from '../hooks/useSlots.js';
 import { useTimezone } from '../hooks/useTimezone.js';
 import { now } from '../lib/clock.js';
-import { defaultDate, nextOpenSlot } from '../lib/days.js';
+import { defaultDate, nextOpenSlot, SHOW_ALL, type SlotFilter } from '../lib/days.js';
 import styles from './BookPage.module.css';
 
 function Skeleton() {
@@ -54,12 +55,31 @@ export function BookPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [focusStart, setFocusStart] = useState<string | null>(null);
   const [formInView, setFormInView] = useState(false);
+  // Early-morning and late-night times (outside 7 AM–9 PM for the parent) are opt-in.
+  const [showNight, setShowNight] = useState(false);
   const timesHeadingRef = useRef<HTMLHeadingElement>(null);
 
   const days = useMemo(() => slots.data?.days ?? [], [slots.data]);
+  // Work out once per data load which starts are daytime for this parent.
+  const daytimeStarts = useMemo(
+    () =>
+      new Set(
+        zone
+          ? days.flatMap((d) =>
+              d.slots.filter((s) => isDaytime(s.startUtc, zone)).map((s) => s.startUtc),
+            )
+          : [],
+      ),
+    [days, zone],
+  );
+  const isDaytimeSlot = useCallback<SlotFilter>(
+    (s) => daytimeStarts.has(s.startUtc),
+    [daytimeStarts],
+  );
+  const visible = showNight ? SHOW_ALL : isDaytimeSlot;
   const requested = params.get('date');
   const selectedDate =
-    requested && days.some((d) => d.date === requested) ? requested : defaultDate(days);
+    requested && days.some((d) => d.date === requested) ? requested : defaultDate(days, visible);
   const selectedDay = days.find((d) => d.date === selectedDate) ?? null;
   const anyOpen = useMemo(() => nextOpenSlot(days) !== null, [days]);
   const today = zone ? localDateOf(now().toISOString(), zone) : '';
@@ -90,9 +110,20 @@ export function BookPage() {
 
   const jumpTo = (slot: SlotDto) => {
     if (!zone) return;
+    if (!isDaytimeSlot(slot)) setShowNight(true); // never jump to a time that's hidden
     selectDate(localDateOf(slot.startUtc, zone));
     setFocusStart(slot.startUtc);
   };
+
+  const toggleNight = () => {
+    // Pin the current day first, so revealing night times never moves the parent to another day.
+    if (selectedDate) selectDate(selectedDate);
+    setShowNight((v) => !v);
+  };
+
+  /** Next open time after `start`: a visible one if possible, else any (the jump reveals it). */
+  const nextOpenAfter = (start: string) =>
+    nextOpenSlot(days, start, visible) ?? nextOpenSlot(days, start);
 
   const onBooked = (booking: BookingResponse) =>
     navigate(`/bookings/${booking.id}`, { state: { booking } });
@@ -150,6 +181,7 @@ export function BookPage() {
             today={today}
             selectedDate={selectedDate}
             onSelect={selectDate}
+            visible={visible}
           />
           {selectedDay && (
             <SlotGrid
@@ -159,10 +191,13 @@ export function BookPage() {
               policy={slots.data.policy}
               selectedStart={selectedSlot?.startUtc ?? null}
               onSelect={selectSlot}
-              nextOpenAfter={(start) => nextOpenSlot(days, start)}
+              nextOpenAfter={nextOpenAfter}
               onJumpTo={jumpTo}
               focusStart={focusStart}
               headingRef={timesHeadingRef}
+              isDaytimeSlot={isDaytimeSlot}
+              showNight={showNight}
+              onToggleNight={toggleNight}
             />
           )}
           {selectedSlot && (

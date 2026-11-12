@@ -147,6 +147,7 @@ export function BookPage() {
               date={selectedDay.date}
               slots={selectedDay.slots}
               zone={zone}
+              policy={slots.data.policy}
               selectedStart={selectedSlot?.startUtc ?? null}
               onSelect={selectSlot}
               nextOpenAfter={(start) => nextOpenSlot(days, start)}

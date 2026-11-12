@@ -32,8 +32,17 @@ export const slotSchema = z.object({
 });
 export type SlotDto = z.infer<typeof slotSchema>;
 
+/** The booking rules in force, so the UI never hard-codes them. */
+export const bookingPolicySchema = z.object({
+  minNoticeMinutes: z.number().int().min(0),
+  horizonDays: z.number().int().min(1),
+  dailyCap: z.number().int().min(1),
+});
+export type BookingPolicyDto = z.infer<typeof bookingPolicySchema>;
+
 export const slotsResponseSchema = z.object({
   timezone: z.string(),
+  policy: bookingPolicySchema,
   days: z.array(z.object({ date: isoDateSchema, slots: z.array(slotSchema) })),
 });
 export type SlotsResponse = z.infer<typeof slotsResponseSchema>;

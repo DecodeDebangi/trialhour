@@ -6,6 +6,7 @@ import {
   localDayBounds,
   offsetLabel,
   zoneLabel,
+  type BookingPolicyDto,
   type SlotDto,
   type UnavailableReason,
 } from '@codeyoung/shared';
@@ -16,6 +17,8 @@ interface SlotGridProps {
   date: string;
   slots: readonly SlotDto[];
   zone: string;
+  /** Booking rules from the API, used in the reason texts. */
+  policy: BookingPolicyDto;
   selectedStart: string | null;
   onSelect: (slot: SlotDto) => void;
   /** First open slot after the given start, anywhere in the horizon. */
@@ -26,20 +29,35 @@ interface SlotGridProps {
   headingRef?: React.Ref<HTMLHeadingElement>;
 }
 
-function reasonMessage(reason: UnavailableReason, slot: SlotDto, zone: string): string {
+function reasonMessage(
+  reason: UnavailableReason,
+  slot: SlotDto,
+  zone: string,
+  policy: BookingPolicyDto,
+): string {
   switch (reason) {
     case 'TOO_SOON':
-      return copy.reasonLong.TOO_SOON();
+      return copy.reasonLong.TOO_SOON(copy.noticeDuration(policy.minNoticeMinutes));
     case 'FULLY_BOOKED':
       return copy.reasonLong.FULLY_BOOKED(formatTime(slot.startUtc, zone));
     case 'DAILY_LIMIT_REACHED':
-      return copy.reasonLong.DAILY_LIMIT_REACHED(formatDate(slot.startUtc, zone));
+      return copy.reasonLong.DAILY_LIMIT_REACHED(formatDate(slot.startUtc, zone), policy.dailyCap);
   }
 }
 
 /** Times for one day. Unavailable times explain themselves on tap; nothing relies on hover. */
 export function SlotGrid(props: SlotGridProps) {
-  const { date, slots, zone, selectedStart, onSelect, nextOpenAfter, onJumpTo, focusStart } = props;
+  const {
+    date,
+    slots,
+    zone,
+    policy,
+    selectedStart,
+    onSelect,
+    nextOpenAfter,
+    onJumpTo,
+    focusStart,
+  } = props;
   const [expanded, setExpanded] = useState<string | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const baseId = useId();
@@ -108,7 +126,7 @@ export function SlotGrid(props: SlotGridProps) {
               const isOpen = expanded === slot.startUtc;
               const panelId = `${baseId}-panel-${slot.startUtc}`;
               const reasonId = `${baseId}-reason-${slot.startUtc}`;
-              const message = reasonMessage(reason, slot, zone);
+              const message = reasonMessage(reason, slot, zone, policy);
               const next = nextOpenAfter(slot.startUtc);
               return (
                 <Fragment key={slot.startUtc}>

@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { description } from '../../testUtils.js';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { SlotGrid } from './SlotGrid.js';
 import { NY, slot, slotsResponse } from '../../testFixtures.js';
 import { nextOpenSlot } from '../../lib/days.js';
 
-const days = slotsResponse().days;
+const { days, policy } = slotsResponse();
 
 function renderDay(date: string, overrides: Partial<Parameters<typeof SlotGrid>[0]> = {}) {
   const day = days.find((d) => d.date === date)!;
@@ -13,6 +13,7 @@ function renderDay(date: string, overrides: Partial<Parameters<typeof SlotGrid>[
     date,
     slots: day.slots,
     zone: NY,
+    policy,
     selectedStart: null,
     onSelect: vi.fn(),
     nextOpenAfter: (start: string) => nextOpenSlot(days, start),
@@ -56,6 +57,32 @@ describe('SlotGrid', () => {
     );
   });
 
+  it('reason texts use the policy from the API, not hard-coded numbers', () => {
+    renderDay('2026-11-12');
+    expect(description(screen.getByRole('button', { name: /^3:00 PM/ }))).toBe(
+      'This time is too soon to book. We need at least 4 hours to get a mentor ready.',
+    );
+    cleanup();
+
+    const strict = { minNoticeMinutes: 720, horizonDays: 14, dailyCap: 3 };
+    renderDay('2026-11-12', { policy: strict });
+    expect(description(screen.getByRole('button', { name: /^3:00 PM/ }))).toBe(
+      'This time is too soon to book. We need at least 12 hours to get a mentor ready.',
+    );
+    cleanup();
+
+    renderDay('2026-11-13', { policy: strict });
+    expect(description(screen.getByRole('button', { name: /^4:00 PM/ }))).toContain(
+      'Each mentor teaches at most 3 trial classes a day',
+    );
+    cleanup();
+
+    renderDay('2026-11-12', { policy: { ...strict, minNoticeMinutes: 90 } });
+    expect(description(screen.getByRole('button', { name: /^3:00 PM/ }))).toContain(
+      'at least 90 minutes',
+    );
+  });
+
   it('a full day offers the next open time, and jumping reports that slot', () => {
     const props = renderDay('2026-11-13');
     expect(screen.getByText('No open times on Fri 13 Nov.')).toBeTruthy();
@@ -95,6 +122,7 @@ describe('SlotGrid', () => {
           slot('2027-11-07T07:00:00Z'),
         ]}
         zone={NY}
+        policy={policy}
         selectedStart={null}
         onSelect={() => {}}
         nextOpenAfter={() => null}

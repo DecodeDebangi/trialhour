@@ -30,12 +30,18 @@ export const copy = {
     DAILY_LIMIT_REACHED: 'Mentors full',
   },
   reasonLong: {
-    TOO_SOON: () =>
-      'This time is too soon to book. We need at least 4 hours to get a mentor ready.',
+    TOO_SOON: (notice: string) =>
+      `This time is too soon to book. We need at least ${notice} to get a mentor ready.`,
     FULLY_BOOKED: (time: string) =>
       `All our mentors are teaching at ${time}. Please pick another time.`,
-    DAILY_LIMIT_REACHED: (date: string) =>
-      `Our mentors have reached their class limit for ${date}. Each mentor teaches at most 2 trial classes a day, so every child gets their full attention.`,
+    DAILY_LIMIT_REACHED: (date: string, cap: number) =>
+      `Our mentors have reached their class limit for ${date}. Each mentor teaches at most ${cap} trial ${cap === 1 ? 'class' : 'classes'} a day, so every child gets their full attention.`,
+  },
+  /** "4 hours", "1 hour", "90 minutes". */
+  noticeDuration: (minutes: number) => {
+    if (minutes % 60 !== 0) return `${minutes} minutes`;
+    const hours = minutes / 60;
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
   },
   nextOpen: (when: string) => `Next open time: ${when}`,
   noOpenOnDay: (date: string) => `No open times on ${date}.`,

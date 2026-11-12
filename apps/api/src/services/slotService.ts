@@ -69,6 +69,11 @@ export class SlotService {
 
     return {
       timezone: tz,
+      policy: {
+        minNoticeMinutes: policy.minNoticeMinutes,
+        horizonDays: policy.horizonDays,
+        dailyCap: policy.dailyCap,
+      },
       days: dates.map((date) => ({ date, slots: byDate.get(date) ?? [] })),
     };
   }

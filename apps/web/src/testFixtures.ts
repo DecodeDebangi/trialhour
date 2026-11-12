@@ -13,6 +13,7 @@ export function slot(startUtc: string, reason?: UnavailableReason): SlotDto {
 export function slotsResponse(): SlotsResponse {
   return {
     timezone: NY,
+    policy: { minNoticeMinutes: 240, horizonDays: 14, dailyCap: 2 },
     days: [
       {
         date: '2026-11-12',

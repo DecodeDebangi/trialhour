@@ -22,6 +22,7 @@ describe('GET /api/slots', () => {
     expect(res.status).toBe(200);
     const body = slotsResponseSchema.parse(res.body);
     expect(body.timezone).toBe('Europe/London');
+    expect(body.policy).toEqual({ minNoticeMinutes: 240, horizonDays: 14, dailyCap: 2 });
     expect(body.days.map((d) => d.date)).toHaveLength(15);
     expect(body.days[0]!.date).toBe('2026-11-12');
     expect(body.days.at(-1)!.date).toBe('2026-11-26');

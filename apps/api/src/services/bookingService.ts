@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { DateTime } from 'luxon';
 import {
   bookingResponseSchema,
+  isDaytime,
   parseInstant,
   type BookingRequest,
   type BookingResponse,
@@ -258,7 +259,11 @@ export class BookingService {
     const dayStart = startUtc.setZone(request.parentTimezone).startOf('day');
     const soon = dayStart.plus({ days: 2 }).toUTC();
     let found = soon < horizonEnd ? nearest(soon) : [];
-    if (found.length < MAX_ALTERNATIVES) found = nearest(horizonEnd);
+    const preferDaytime = isDaytime(startUtc, request.parentTimezone);
+    const enough =
+      found.length === MAX_ALTERNATIVES &&
+      (!preferDaytime || found.every((s) => isDaytime(s.startUtc, request.parentTimezone)));
+    if (!enough) found = nearest(horizonEnd);
     return found.map((s) => ({ startUtc: iso(s.startUtc), endUtc: iso(s.endUtc) }));
   }
 }

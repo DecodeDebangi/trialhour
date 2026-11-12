@@ -1,0 +1,160 @@
+.wrap {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+.hero {
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+}
+
+.tick {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--ink);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.title {
+  font-size: clamp(1.75rem, 7vw, 2.25rem);
+}
+
+.lead {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.card {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.item {
+  padding: var(--space-4) 0;
+}
+
+.item + .item {
+  border-top: 1px solid var(--border);
+}
+
+.item dt {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  margin-bottom: var(--space-1);
+}
+
+.item dd {
+  margin: 0;
+}
+
+.when {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.secondary {
+  display: block;
+  color: var(--ink-muted);
+}
+
+.mentor {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.linkRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+}
+
+.linkInput {
+  min-height: var(--tap);
+  min-width: 0;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  text-overflow: ellipsis;
+}
+
+.copyButton {
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-hover);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.copyStatus {
+  grid-column: 1 / -1;
+  margin: 0;
+  min-height: 1.5em;
+  font-size: 0.9375rem;
+  color: var(--primary-hover);
+  font-weight: 600;
+}
+
+.openLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  margin-top: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.openLink:hover {
+  background: var(--primary-hover);
+}
+
+.next {
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+}
+
+.nextHeading {
+  font-size: 1.125rem;
+  margin-bottom: var(--space-2);
+}
+
+.steps {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.another {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  font-weight: 600;
+}

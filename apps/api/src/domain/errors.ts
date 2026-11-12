@@ -14,3 +14,16 @@ export class ScheduleValidationError extends DomainError {
     this.name = 'ScheduleValidationError';
   }
 }
+
+/** A request that is well-formed but asks for something we don't allow (→ 422). */
+export class RequestValidationError extends DomainError {
+  readonly code = 'VALIDATION_ERROR';
+
+  constructor(
+    message: string,
+    readonly details?: unknown,
+  ) {
+    super(message);
+    this.name = 'RequestValidationError';
+  }
+}

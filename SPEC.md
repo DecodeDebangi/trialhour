@@ -1,6 +1,6 @@
 # Trial Class Booking — Spec
 
-Status: **draft for review**. No code until this is approved.
+Status: **agreed and implemented for P0 and P1** (see §12). P2 was not built: the mentor page (and its `/api/mentors` endpoints in §9) and the Playwright test. This is the spec as agreed before coding; where implementation details differ, README.md describes what was built.
 
 A parent picks a time for their child's free 1:1 trial class, shown in the parent's own time zone. The system assigns an eligible mentor (mentors work in India), confirms with a dummy class link, and sends both sides the details in their own local time.
 

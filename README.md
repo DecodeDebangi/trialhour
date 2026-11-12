@@ -72,8 +72,8 @@ NOW_OVERRIDE=2027-03-13T12:00:00Z docker compose up --build
 Then pick New York and compare Sat 13 Mar with Sun 14 Mar: the same India-time shift starts at 3:00 PM (GMT-5) on Saturday and 4:00 PM (GMT-4) on Sunday.
 
 **What the seed shows on first load** (relative to "now"). Every demo booking already has its two emails in the outbox at **http://localhost:5173/outbox**.
-- Tomorrow's UK-evening shift is full because all three UK mentors are at their daily cap. In London time, Fri 3–7 PM shows "✕ Mentors full".
-- Tomorrow's first US-East slot is booked by all three East-coast mentors, so it shows "✕ Booked".
+- Tomorrow's UK-evening shift is full because all three UK mentors are at their daily cap. In London time, tomorrow 3–7 PM (4–8 PM in British Summer Time) shows "✕ Mentors full".
+- The first slot of tomorrow's US-East shift (01:30 India time, which is this afternoon or evening in New York) is booked by all three East-coast mentors, so it shows "✕ Booked", or "✕ Too soon" if it's already less than 4 hours away.
 - Slots in the next 4 hours show "✕ Too soon".
 
 ## Run locally (Postgres in Docker, app with npm)
@@ -196,7 +196,7 @@ MongoDB can do multi-document transactions, but it needs a replica set even loca
 | A6 | **Bookable from 4 hours to 14 days ahead** (configurable). | The trial is a marketing funnel: a parent should be able to book while they're interested. The cost is that mentors sometimes get under 4 hours' notice; they see bookings immediately. 12 hours would be the cautious choice. |
 | A7 | **A parent is identified by email + child name** (trimmed, lower-cased, spaces collapsed). | A parent with two kids can book one trial for each. A second *upcoming* trial for the same child is refused with a link to the first. |
 | A8 | **"Now" is injected** everywhere (`Clock`). | Tests and the DST demo run on fixed instants. The server clock is authoritative; the client's clock is never trusted. |
-| A9 | **No auth.** Booking pages use unguessable UUIDs. | Fine for a demo; listed under next steps. |
+| A9 | **No auth.** Booking pages use unguessable UUIDs. | Fine for a demo; listed under next steps. The `/outbox` page and `GET /api/outbox` show every demo email, including parent and child names: a reviewer tool that would not exist in production. |
 | — | **No temporary slot holds (no Redis).** | At ~20 bookings/day, a parent losing a slot while filling in the form is rare. It's handled with a friendly 409 and a refreshed list rather than hold/expiry machinery. |
 | — | **No ORM; one Dockerfile; `vite preview` serves the web build.** | Fewer moving parts. The locking SQL is visible, and there's no nginx config to maintain. |
 | — | **A start time already in the past is "too soon" (409), not invalid (422).** | It almost always means the parent left the form open; alternatives help more than a validation error. |

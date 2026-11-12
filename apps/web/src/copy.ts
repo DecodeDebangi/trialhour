@@ -1,6 +1,8 @@
 // Every parent-facing message in one place (SPEC §8). Times are always pre-formatted by
 // @codeyoung/shared before they get here.
 
+import type { UnavailableReason } from '@codeyoung/shared';
+
 export const copy = {
   productName: 'Trialhour',
   heroTitle: 'Book a free 1:1 coding class for your child',
@@ -24,19 +26,19 @@ export const copy = {
   timesHeading: 'Pick a time',
   loadingTimes: 'Finding open times…',
 
+  // Parent-facing reasons are always about *that time*, never internal rules such as a
+  // mentor's daily cap: "no mentor is free then" is what matters to a parent, and another
+  // time the same day may well be open. DAILY_LIMIT_REACHED therefore reads like FULLY_BOOKED.
   reasonShort: {
     TOO_SOON: 'Too soon',
     FULLY_BOOKED: 'Booked',
-    DAILY_LIMIT_REACHED: 'Mentors full',
+    DAILY_LIMIT_REACHED: 'Booked',
   },
-  reasonLong: {
-    TOO_SOON: (notice: string) =>
-      `This time is too soon to book. We need at least ${notice} to get a mentor ready.`,
-    FULLY_BOOKED: (time: string) =>
-      `All our mentors are teaching at ${time}. Please pick another time.`,
-    DAILY_LIMIT_REACHED: (date: string, cap: number) =>
-      `Our mentors have reached their class limit for ${date}. Each mentor teaches at most ${cap} trial ${cap === 1 ? 'class' : 'classes'} a day, so every child gets their full attention.`,
-  },
+  /** Explanation for a greyed-out time in the grid. */
+  unavailableReason: (reason: UnavailableReason, time: string, date: string, notice: string) =>
+    reason === 'TOO_SOON'
+      ? `${time} on ${date} is too soon to book. We need at least ${notice} to get a mentor ready.`
+      : `No mentor is free at ${time} on ${date}. Please pick another time.`,
   /** "4 hours", "1 hour", "90 minutes". */
   noticeDuration: (minutes: number) => {
     if (minutes % 60 !== 0) return `${minutes} minutes`;
@@ -48,15 +50,14 @@ export const copy = {
   noClassesOnDay: (date: string) => `No classes on ${date}.`,
   allFull:
     'All trial times for the next 2 weeks are taken. New times open every day, so please check back tomorrow.',
-  slotJustTaken: (time: string) =>
-    `Sorry, someone booked ${time} a moment ago. We've refreshed the times; please pick another.`,
-
-  conflictTitle: {
-    FULLY_BOOKED: (time: string) => `Sorry, ${time} was just taken.`,
-    DAILY_LIMIT_REACHED: (date: string) =>
-      `Our mentors just reached their class limit for ${date}.`,
-    TOO_SOON: (time: string) => `${time} is now too soon to book.`,
-  },
+  /** Heading of the 409 panel: the chosen time stopped being bookable while the form was open. */
+  conflictTitle: (reason: UnavailableReason | undefined, time: string, date: string) =>
+    reason === 'TOO_SOON'
+      ? `${time} on ${date} is now too soon to book.`
+      : `No mentor is free at ${time} on ${date} anymore.`,
+  /** Page-level notice when a 409 comes back with no alternatives to offer. */
+  slotJustTaken: (reason: UnavailableReason | undefined, time: string, date: string) =>
+    `${copy.conflictTitle(reason, time, date)} We've refreshed the times; please pick another.`,
   conflictLead:
     "Here are the nearest open times. Choose one, then confirm to book it with the details you've entered.",
   bookThis: (when: string) => `Book ${when}`,

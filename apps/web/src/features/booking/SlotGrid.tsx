@@ -35,14 +35,12 @@ function reasonMessage(
   zone: string,
   policy: BookingPolicyDto,
 ): string {
-  switch (reason) {
-    case 'TOO_SOON':
-      return copy.reasonLong.TOO_SOON(copy.noticeDuration(policy.minNoticeMinutes));
-    case 'FULLY_BOOKED':
-      return copy.reasonLong.FULLY_BOOKED(formatTime(slot.startUtc, zone));
-    case 'DAILY_LIMIT_REACHED':
-      return copy.reasonLong.DAILY_LIMIT_REACHED(formatDate(slot.startUtc, zone), policy.dailyCap);
-  }
+  return copy.unavailableReason(
+    reason,
+    formatTime(slot.startUtc, zone),
+    formatDate(slot.startUtc, zone),
+    copy.noticeDuration(policy.minNoticeMinutes),
+  );
 }
 
 /** Times for one day. Unavailable times explain themselves on tap; nothing relies on hover. */

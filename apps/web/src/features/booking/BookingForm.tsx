@@ -118,16 +118,9 @@ export function BookingForm({
       : { errors: found };
   }
 
-  function conflictTitle(error: ApiError, startUtc: string): string {
-    switch (error.reason) {
-      case 'DAILY_LIMIT_REACHED':
-        return copy.conflictTitle.DAILY_LIMIT_REACHED(formatDate(startUtc, zone));
-      case 'TOO_SOON':
-        return copy.conflictTitle.TOO_SOON(formatTime(startUtc, zone));
-      default:
-        return copy.conflictTitle.FULLY_BOOKED(formatTime(startUtc, zone));
-    }
-  }
+  // The summary card right above shows this time with its zone, so time + date reads clearly here.
+  const conflictTitle = (error: ApiError, startUtc: string) =>
+    copy.conflictTitle(error.reason, formatTime(startUtc, zone), formatDate(startUtc, zone));
 
   /** Submits for the chosen slot, or for an alternative picked from the conflict panel. */
   async function submit(e?: FormEvent, startUtc: string = slot.startUtc) {

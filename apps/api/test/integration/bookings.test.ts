@@ -130,7 +130,7 @@ describe('POST /api/bookings — capacity rules', () => {
     expect(slotUnavailableResponseSchema.parse(res.body)).toEqual({
       error: {
         code: 'SLOT_UNAVAILABLE',
-        message: 'Sorry, that time has just been taken.',
+        message: 'No mentor is free at that time anymore.',
         details: { reason: 'FULLY_BOOKED' },
       },
       // Same London day, closest first (15:00 and 17:00 tie at 1h; earlier wins), then 18, 19, 20.
@@ -153,6 +153,8 @@ describe('POST /api/bookings — capacity rules', () => {
       .send(bookingBody(UK(17)));
     expect(res.status).toBe(409);
     expect(res.body.error.details).toEqual({ reason: 'DAILY_LIMIT_REACHED' });
+    // Parents see a message about the time, never the internal cap.
+    expect(res.body.error.message).toBe('No mentor is free at that time anymore.');
   });
 
   it('C7: inside the 4h notice → 409 TOO_SOON', async () => {

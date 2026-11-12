@@ -132,12 +132,12 @@ This is a greedy heuristic, not an optimum. Optimal assignment is a matching pro
 
 | Situation | What the parent sees |
 |---|---|
-| Slot inside the 4h notice | Greyed out: "Too soon — bookings close 4 hours before class" |
-| Every covering mentor booked at that time | Greyed out: "All mentors are booked at this time" |
-| Every covering mentor at the daily cap | Greyed out: "Our mentors have reached their class limit for this day" |
+| Slot inside the notice period | Greyed out "Too soon": "4:00 PM on Sat 14 Nov is too soon to book. We need at least 4 hours to get a mentor ready." |
+| Every covering mentor booked at that time | Greyed out "Booked": "No mentor is free at 4:00 PM on Sat 14 Nov. Please pick another time." |
+| Every covering mentor at the daily cap | Same as booked. Reasons are about the time; the daily cap is internal and never shown to parents. |
 | Day with no open slots | Greyed slots with reasons, plus "Next available: Fri 13 Nov, 4:00 PM New York time (GMT-5)" (one click) |
 | Nothing open in the next 14 days | "All trial slots for the next 2 weeks are taken — new times open daily." |
-| 409 on submit (slot taken mid-form) | "Someone just booked 4:00 PM. Nearest times:" then ≤5 alternatives. One click rebooks with a new idempotency key and the form data kept. |
+| 409 on submit (slot taken mid-form) | "No mentor is free at 4:00 PM on Sat 14 Nov anymore. Here are the nearest open times…" then ≤5 alternatives. Choose one, then confirm; the form data is kept and a new idempotency key is used. |
 | Duplicate trial | "Aanya already has a trial on Fri 13 Nov, 4:00 PM New York time (GMT-5)" with a link to that booking |
 | Validation error | Inline per field |
 | Network error or 5xx | Retry with the **same** idempotency key (safe to repeat) |

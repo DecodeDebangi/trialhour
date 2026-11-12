@@ -64,7 +64,7 @@ describe('BookPage', () => {
   it('409 while booking: explains, clears the choice and refreshes the times', async () => {
     const get = vi.spyOn(api, 'getSlots').mockResolvedValue(slotsResponse());
     vi.spyOn(api, 'createBooking').mockRejectedValue(
-      new ApiError('unavailable', 'Sorry, that time has just been taken.', {}, 'FULLY_BOOKED'),
+      new ApiError('unavailable', 'No mentor is free at that time anymore.', {}, 'FULLY_BOOKED'),
     );
     renderPage();
     fireEvent.click(await screen.findByRole('button', { name: '4:00 PM' }));
@@ -73,7 +73,7 @@ describe('BookPage', () => {
 
     expect(
       await screen.findByText(
-        "Sorry, someone booked 4:00 PM a moment ago. We've refreshed the times; please pick another.",
+        "No mentor is free at 4:00 PM on Sun 15 Nov anymore. We've refreshed the times; please pick another.",
       ),
     ).toBeTruthy();
     await waitFor(() => expect(get).toHaveBeenCalledTimes(2));

@@ -30,10 +30,13 @@ export class RequestValidationError extends DomainError {
   }
 }
 
+// Parent-facing and about the requested time only. A mentor's daily cap is an internal rule:
+// other times that day may be open, so it reads exactly like "taken". `details.reason` keeps
+// the precise code for clients and logs.
 const UNAVAILABLE_MESSAGES: Readonly<Record<UnavailableReason, string>> = {
   TOO_SOON: 'That time is too soon to book. Bookings close shortly before each class.',
-  DAILY_LIMIT_REACHED: 'Our mentors have reached their class limit for that day.',
-  FULLY_BOOKED: 'Sorry, that time has just been taken.',
+  DAILY_LIMIT_REACHED: 'No mentor is free at that time anymore.',
+  FULLY_BOOKED: 'No mentor is free at that time anymore.',
 };
 
 /** The slot is real but can't be booked now (→ 409 with alternatives). */

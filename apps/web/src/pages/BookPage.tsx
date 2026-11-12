@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { formatTime, localDateOf, type BookingResponse, type SlotDto } from '@codeyoung/shared';
+import {
+  formatDate,
+  formatTime,
+  localDateOf,
+  type BookingResponse,
+  type SlotDto,
+} from '@codeyoung/shared';
 import type { ApiError } from '../api/client.js';
 import { Layout } from '../components/Layout.js';
 import { Notice } from '../components/Notice.js';
@@ -92,8 +98,12 @@ export function BookPage() {
     navigate(`/bookings/${booking.id}`, { state: { booking } });
 
   const onUnavailable = (error: ApiError) => {
-    const time = selectedSlot && zone ? formatTime(selectedSlot.startUtc, zone) : '';
-    setNotice(error.reason === 'FULLY_BOOKED' ? copy.slotJustTaken(time) : error.message);
+    if (selectedSlot && zone) {
+      const start = selectedSlot.startUtc;
+      setNotice(copy.slotJustTaken(error.reason, formatTime(start, zone), formatDate(start, zone)));
+    } else {
+      setNotice(error.message);
+    }
     setSelectedSlot(null);
     slots.reload();
     requestAnimationFrame(() => timesHeadingRef.current?.focus());

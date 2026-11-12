@@ -195,7 +195,7 @@ describe('BookingForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
 
     const panel = await screen.findByRole('alert');
-    expect(panel.textContent).toContain('Sorry, 4:00 PM was just taken.');
+    expect(panel.textContent).toContain('No mentor is free at 4:00 PM on Fri 13 Nov anymore.');
     expect(panel.textContent).toContain('Choose one, then confirm to book it with the details you');
     const options = within(panel).getAllByRole('button').slice(0, 3);
     expect(options.map((b) => b.textContent)).toEqual([
@@ -228,7 +228,7 @@ describe('BookingForm', () => {
     expect(secondCall![1]).not.toBe(firstCall![1]); // a different request gets a fresh key
   });
 
-  it('409 for the daily limit names the day', async () => {
+  it('409 for a mentor cap reads like any taken time: about the time, not the day', async () => {
     vi.spyOn(api, 'createBooking').mockRejectedValue(
       new ApiError('unavailable', 'limit', {}, 'DAILY_LIMIT_REACHED', [
         { startUtc: '2026-11-14T16:00:00Z', endUtc: '2026-11-14T17:00:00Z' },
@@ -237,9 +237,9 @@ describe('BookingForm', () => {
     renderForm();
     fillValid();
     fireEvent.click(screen.getByRole('button', { name: 'Book free class' }));
-    expect((await screen.findByRole('alert')).textContent).toContain(
-      'Our mentors just reached their class limit for Fri 13 Nov.',
-    );
+    const panel = await screen.findByRole('alert');
+    expect(panel.textContent).toContain('No mentor is free at 4:00 PM on Fri 13 Nov anymore.');
+    expect(panel.textContent).not.toMatch(/limit/i);
   });
 
   it('duplicate trial: names the child and the existing time, and links to that booking', async () => {

@@ -42,7 +42,7 @@ describe('SlotGrid', () => {
     expect(booked.getAttribute('aria-expanded')).toBe('true');
     const panel = screen.getByRole('region', { name: /3:00 PM: Booked/ });
     expect(panel.textContent).toContain(
-      'All our mentors are teaching at 3:00 PM. Please pick another time.',
+      'No mentor is free at 3:00 PM on Fri 13 Nov. Please pick another time.',
     );
     expect(props.onSelect).not.toHaveBeenCalled();
 
@@ -53,27 +53,32 @@ describe('SlotGrid', () => {
   it('screen readers get the full reason without tapping (aria-describedby)', () => {
     renderDay('2026-11-13');
     expect(description(screen.getByRole('button', { name: /^4:00 PM/ }))).toBe(
-      'Our mentors have reached their class limit for Fri 13 Nov. Each mentor teaches at most 2 trial classes a day, so every child gets their full attention.',
+      'No mentor is free at 4:00 PM on Fri 13 Nov. Please pick another time.',
+    );
+  });
+
+  it('mentors at their daily cap read exactly like a booked time: about the time, no internal rules', () => {
+    renderDay('2026-11-13'); // 3 PM FULLY_BOOKED, 4 PM DAILY_LIMIT_REACHED
+    const capped = screen.getByRole('button', { name: /^4:00 PM/ });
+    expect(capped.textContent).toContain('Booked');
+    expect(capped.textContent).not.toMatch(/full|limit/i);
+    expect(description(capped)).not.toMatch(/limit|at most|a day/);
+    expect(description(capped)).toBe(
+      description(screen.getByRole('button', { name: /^3:00 PM/ })).replace('3:00 PM', '4:00 PM'),
     );
   });
 
   it('reason texts use the policy from the API, not hard-coded numbers', () => {
     renderDay('2026-11-12');
     expect(description(screen.getByRole('button', { name: /^3:00 PM/ }))).toBe(
-      'This time is too soon to book. We need at least 4 hours to get a mentor ready.',
+      '3:00 PM on Thu 12 Nov is too soon to book. We need at least 4 hours to get a mentor ready.',
     );
     cleanup();
 
     const strict = { minNoticeMinutes: 720, horizonDays: 14, dailyCap: 3 };
     renderDay('2026-11-12', { policy: strict });
     expect(description(screen.getByRole('button', { name: /^3:00 PM/ }))).toBe(
-      'This time is too soon to book. We need at least 12 hours to get a mentor ready.',
-    );
-    cleanup();
-
-    renderDay('2026-11-13', { policy: strict });
-    expect(description(screen.getByRole('button', { name: /^4:00 PM/ }))).toContain(
-      'Each mentor teaches at most 3 trial classes a day',
+      '3:00 PM on Thu 12 Nov is too soon to book. We need at least 12 hours to get a mentor ready.',
     );
     cleanup();
 

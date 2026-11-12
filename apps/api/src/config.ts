@@ -1,6 +1,8 @@
 import { z } from 'zod';
-
-const strategies = ['capacity-preserving', 'fair-load'] as const;
+import {
+  ASSIGNMENT_STRATEGY_NAMES,
+  type AssignmentStrategyName,
+} from './domain/assignment/strategy.js';
 
 const envSchema = z
   .object({
@@ -10,15 +12,13 @@ const envSchema = z
     MIN_NOTICE_MINUTES: z.coerce.number().int().min(0).default(240),
     BOOKING_HORIZON_DAYS: z.coerce.number().int().min(1).max(60).default(14),
     MENTOR_DAILY_CAP: z.coerce.number().int().min(1).default(2),
-    ASSIGNMENT_STRATEGY: z.enum(strategies).default('capacity-preserving'),
+    ASSIGNMENT_STRATEGY: z.enum(ASSIGNMENT_STRATEGY_NAMES).default('capacity-preserving'),
     NOW_OVERRIDE: z.iso.datetime({ offset: true }).optional(),
   })
   .refine((env) => !(env.NODE_ENV === 'production' && env.NOW_OVERRIDE), {
     message: 'NOW_OVERRIDE is not allowed when NODE_ENV=production',
     path: ['NOW_OVERRIDE'],
   });
-
-export type AssignmentStrategyName = (typeof strategies)[number];
 
 export interface Config {
   nodeEnv: 'development' | 'test' | 'production';
